@@ -1,0 +1,192 @@
+:root {
+	/* Background layers */
+	--bg-primary: #0a0e17;
+	--bg-secondary: #131a2b;
+	--bg-tertiary: #1c2640;
+	--bg-elevated: #243050;
+	--bg-input: #0f1520;
+
+	/* Text */
+	--text-primary: #e2e8f0;
+	--text-secondary: #8b96a9;
+	--text-muted: #4a5568;
+	--text-inverse: #0a0e17;
+
+	/* Accent — Teal/Emerald */
+	--color-accent: #10b981;
+	--color-accent-hover: #34d399;
+	--color-accent-dim: #059669;
+	--color-accent-bg: rgba(16, 185, 129, 0.12);
+
+	/* Status colors */
+	--color-success: #10b981;
+	--color-warning: #f59e0b;
+	--color-error: #ef4444;
+	--color-info: #3b82f6;
+
+	/* Borders */
+	--border-color: #1e2a3e;
+	--border-color-light: #2d3f58;
+
+	/* Sidebar */
+	--sidebar-width: 240px;
+	--sidebar-width-collapsed: 60px;
+	--sidebar-bg: var(--bg-secondary);
+	--sidebar-item-hover: var(--bg-tertiary);
+	--sidebar-item-active-bg: var(--color-accent-bg);
+	--sidebar-item-active-border: var(--color-accent);
+
+	/* Spacing scale */
+	--space-xs: 4px;
+	--space-sm: 8px;
+	--space-md: 12px;
+	--space-lg: 16px;
+	--space-xl: 24px;
+	--space-xxl: 32px;
+	--space-3xl: 48px;
+	--space-4xl: 64px;
+	--space-5xl: 96px;
+
+	/* Border radius */
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 12px;
+	--radius-2xl: 16px;
+	--radius-full: 9999px;
+
+	/* Typography */
+	--font-ui: -apple-system, 'Segoe UI', system-ui, sans-serif;
+	--font-mono: 'Consolas', 'JetBrains Mono', 'Courier New', monospace;
+	--font-size-xs: 11px;
+	--font-size-sm: 12px;
+	--font-size-md: 14px;
+	--font-size-lg: 16px;
+	--font-size-xl: 20px;
+	--font-size-xxl: 24px;
+	--font-size-3xl: 32px;
+	--font-size-4xl: 40px;
+	--font-size-5xl: 48px;
+
+	/* Shadows */
+	--shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+	--shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
+	--shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
+	--shadow-glow: 0 0 20px rgba(16, 185, 129, 0.15);
+
+	/* Transitions */
+	--transition-fast: 100ms ease;
+	--transition-normal: 200ms ease;
+	--transition-slow: 300ms ease;
+
+	/* Z-index layers */
+	--z-base: 1;
+	--z-dropdown: 100;
+	--z-sticky: 150;
+	--z-panel: 200;
+	--z-modal: 300;
+	--z-toast: 400;
+
+	/* Marketing-specific */
+	--section-gap: 120px;
+	--container-max: 1200px;
+	--container-narrow: 800px;
+}
+
+/* Reset */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	font-family: var(--font-ui);
+	font-size: var(--font-size-md);
+	color: var(--text-primary);
+	background-color: var(--bg-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	scroll-behavior: smooth;
+}
+
+body {
+	min-height: 100vh;
+	line-height: 1.6;
+}
+
+a {
+	color: var(--color-accent);
+	text-decoration: none;
+}
+
+a:hover {
+	color: var(--color-accent-hover);
+}
+
+button {
+	font-family: inherit;
+	cursor: pointer;
+}
+
+input,
+select,
+textarea {
+	font-family: inherit;
+	font-size: inherit;
+}
+
+code,
+pre {
+	font-family: var(--font-mono);
+}
+
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--bg-tertiary);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--border-color-light);
+}
+
+/* Utility classes */
+.container {
+	max-width: var(--container-max);
+	margin: 0 auto;
+	padding: 0 var(--space-xl);
+}
+
+.container-narrow {
+	max-width: var(--container-narrow);
+	margin: 0 auto;
+	padding: 0 var(--space-xl);
+}
+
+/* Selection */
+::selection {
+	background-color: rgba(16, 185, 129, 0.3);
+	color: var(--text-primary);
+}

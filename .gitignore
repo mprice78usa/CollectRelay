@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+.svelte-kit/
+build/
+
+# Environment files
+.env
+.env.*
+!.env.example
+.dev.vars
+
+# Wrangler
+.wrangler/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+# Claude
+.claude/

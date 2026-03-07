@@ -1,0 +1,1610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, height=720">
+<title>CollectRelay — Promo Video</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0e17;
+    --bg2: #111827;
+    --bg3: #1f2937;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --text: #f1f5f9;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: #1e293b;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    width: 1280px;
+    height: 720px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ===== SCENE SYSTEM ===== */
+  .scene {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+    pointer-events: none;
+  }
+
+  .scene.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* ===== PROGRESS BAR ===== */
+  .video-progress {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--accent);
+    z-index: 1000;
+    transition: width 0.3s linear;
+  }
+
+  /* ===== SCENE 1: HOOK ===== */
+  .hook {
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .email-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+  }
+
+  .email-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+    color: var(--text2);
+    opacity: 0;
+    transform: translateY(10px);
+    min-width: 500px;
+  }
+
+  .email-line .icon {
+    width: 20px;
+    height: 20px;
+    color: var(--red);
+  }
+
+  .email-line .re {
+    color: var(--text3);
+    font-weight: 600;
+    margin-right: 4px;
+  }
+
+  /* ===== SCENE 2: PROBLEM ===== */
+  .problem {
+    flex-direction: column;
+    gap: 32px;
+    text-align: center;
+  }
+
+  .problem-text {
+    font-size: 42px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    max-width: 800px;
+    line-height: 1.2;
+    opacity: 0;
+  }
+
+  .problem-sub {
+    font-size: 20px;
+    color: var(--text2);
+    opacity: 0;
+  }
+
+  /* ===== SCENE 3: INTRO ===== */
+  .intro {
+    flex-direction: column;
+    gap: 24px;
+    text-align: center;
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    opacity: 0;
+    transform: scale(0.9);
+  }
+
+  .logo-mark svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .tagline {
+    font-size: 22px;
+    color: var(--text2);
+    opacity: 0;
+  }
+
+  .intro-features {
+    display: flex;
+    gap: 32px;
+    margin-top: 16px;
+  }
+
+  .intro-feat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: var(--text2);
+    opacity: 0;
+  }
+
+  .intro-feat .dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  /* ===== SCENE 4: CREATE TRANSACTION ===== */
+  .app-mockup {
+    width: 1120px;
+    height: 640px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  .mock-sidebar {
+    width: 200px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .mock-sidebar .logo-sm {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+  }
+
+  .mock-sidebar .logo-sm svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .mock-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .mock-nav-item.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent);
+  }
+
+  .mock-nav-item svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mock-main {
+    flex: 1;
+    padding: 32px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .scene-label {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    z-index: 10;
+  }
+
+  /* Dashboard Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+
+  .stat-card .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+
+  .stat-card .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .stat-card.green .stat-value { color: var(--accent); }
+  .stat-card.yellow .stat-value { color: var(--yellow); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+  .stat-card.purple .stat-value { color: var(--purple); }
+
+  /* Transaction list items */
+  .txn-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .txn-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .txn-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .txn-title {
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .txn-client {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .txn-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .progress-mini {
+    width: 120px;
+    height: 6px;
+    background: var(--bg3);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .progress-mini-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 1s ease;
+  }
+
+  .status-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .status-badge.active { background: rgba(16,185,129,0.15); color: var(--accent); }
+  .status-badge.review { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .status-badge.completed { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+  /* ===== SCENE 5: CLIENT PORTAL ===== */
+  .client-portal {
+    width: 900px;
+    height: 600px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 40px 48px;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  .portal-header {
+    margin-bottom: 24px;
+  }
+
+  .portal-header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .portal-header .due {
+    font-size: 13px;
+    color: var(--text3);
+  }
+
+  .portal-progress {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding: 16px 20px;
+    background: var(--bg2);
+    border-radius: 10px;
+  }
+
+  .portal-progress .prog-text {
+    font-size: 13px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  .portal-progress .prog-pct {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+
+  .portal-progress .prog-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--bg3);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .portal-progress .prog-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 4px;
+    transition: width 1.5s ease;
+  }
+
+  .portal-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .portal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  .portal-item .item-num {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .portal-item .item-num.pending {
+    background: var(--bg3);
+    color: var(--text2);
+  }
+
+  .portal-item .item-num.done {
+    background: rgba(16,185,129,0.15);
+    color: var(--accent);
+  }
+
+  .portal-item .item-num.submitted {
+    background: rgba(245,158,11,0.15);
+    color: var(--yellow);
+  }
+
+  .portal-item .item-name {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .portal-item .item-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+
+  .portal-item .item-badge.doc { background: rgba(59,130,246,0.12); color: var(--blue); }
+  .portal-item .item-badge.q { background: rgba(139,92,246,0.12); color: var(--purple); }
+
+  .portal-item .item-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  .portal-item .item-status.pending { background: var(--bg3); color: var(--text3); }
+  .portal-item .item-status.submitted { background: rgba(245,158,11,0.15); color: var(--yellow); }
+  .portal-item .item-status.accepted { background: rgba(16,185,129,0.15); color: var(--accent); }
+
+  /* Upload animation */
+  .upload-zone {
+    margin-top: 8px;
+    padding: 24px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    text-align: center;
+    color: var(--text3);
+    font-size: 13px;
+    opacity: 0;
+    transition: all 0.5s ease;
+  }
+
+  .upload-zone.show {
+    opacity: 1;
+  }
+
+  .upload-zone.uploading {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .upload-zone.success {
+    border-color: var(--accent);
+    background: rgba(16,185,129,0.05);
+    color: var(--accent);
+  }
+
+  /* ===== SCENE 6: REVIEW ===== */
+  .review-mockup {
+    width: 1120px;
+    height: 640px;
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    display: flex;
+    overflow: hidden;
+    opacity: 0;
+  }
+
+  .review-content {
+    flex: 1;
+    padding: 32px;
+  }
+
+  .review-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .review-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .review-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .review-item {
+    padding: 16px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .review-item-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .review-item .r-num {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg3);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text2);
+    flex-shrink: 0;
+  }
+
+  .review-item .r-name {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .review-item .r-file {
+    font-size: 12px;
+    color: var(--text3);
+    margin-left: 36px;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .review-btns {
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-sm {
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+  }
+
+  .btn-accept {
+    background: rgba(16,185,129,0.15);
+    color: var(--accent);
+  }
+
+  .btn-reject {
+    background: rgba(239,68,68,0.12);
+    color: var(--red);
+  }
+
+  .btn-accept.clicked {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .btn-reject.clicked {
+    background: var(--red);
+    color: #fff;
+  }
+
+  .activity-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--yellow);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(245,158,11,0.25);
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }
+    50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(245,158,11,0.1); }
+  }
+
+  /* Comment thread */
+  .comment-thread {
+    margin-top: 12px;
+    margin-left: 36px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: all 0.5s ease;
+  }
+
+  .comment-thread.show {
+    opacity: 1;
+    max-height: 200px;
+  }
+
+  .comment-bubble {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 8px;
+    max-width: 400px;
+  }
+
+  .comment-bubble.pro {
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+  }
+
+  .comment-bubble.client {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+  }
+
+  .comment-bubble .author {
+    font-weight: 600;
+    font-size: 11px;
+    margin-bottom: 4px;
+  }
+
+  .comment-bubble.pro .author { color: var(--accent); }
+  .comment-bubble.client .author { color: var(--blue); }
+
+  /* ===== SCENE 7: NOTIFICATIONS ===== */
+  .notif-scene {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .desktop-notif {
+    position: absolute;
+    top: 40px;
+    right: 40px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    min-width: 340px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.4s ease;
+  }
+
+  .desktop-notif.show {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .desktop-notif .notif-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(245,158,11,0.15);
+    border-radius: 50%;
+    flex-shrink: 0;
+    color: var(--yellow);
+  }
+
+  .desktop-notif .notif-body h4 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+
+  .desktop-notif .notif-body p {
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  /* ===== SCENE 8: INDUSTRIES ===== */
+  .industries-scene {
+    flex-direction: column;
+    gap: 40px;
+    text-align: center;
+  }
+
+  .industries-scene h2 {
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    opacity: 0;
+  }
+
+  .industry-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 900px;
+  }
+
+  .industry-card {
+    padding: 28px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  .industry-card .ind-icon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(16,185,129,0.1);
+    border-radius: 12px;
+    margin: 0 auto 12px;
+    color: var(--accent);
+  }
+
+  .industry-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .industry-card p {
+    font-size: 12px;
+    color: var(--text3);
+    line-height: 1.5;
+  }
+
+  /* ===== SCENE 9: SECURITY ===== */
+  .security-scene {
+    flex-direction: column;
+    gap: 32px;
+    text-align: center;
+  }
+
+  .security-scene h2 {
+    font-size: 32px;
+    font-weight: 700;
+    opacity: 0;
+  }
+
+  .security-badges {
+    display: flex;
+    gap: 20px;
+  }
+
+  .sec-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    background: var(--bg2);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 10px;
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  .sec-badge .badge-label {
+    background: rgba(16,185,129,0.15);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+  }
+
+  .sec-badge span:last-child {
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  .security-features {
+    display: flex;
+    gap: 24px;
+    margin-top: 8px;
+  }
+
+  .sec-feat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text2);
+    font-size: 14px;
+    opacity: 0;
+  }
+
+  .sec-feat svg {
+    color: var(--accent);
+    width: 18px;
+    height: 18px;
+  }
+
+  /* ===== SCENE 10: CTA ===== */
+  .cta-scene {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .cta-scene .logo-big {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    opacity: 0;
+  }
+
+  .cta-scene .logo-big svg {
+    width: 56px;
+    height: 56px;
+  }
+
+  .cta-tagline {
+    font-size: 22px;
+    color: var(--text2);
+    opacity: 0;
+  }
+
+  .cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 14px 36px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    border-radius: 12px;
+    border: none;
+    opacity: 0;
+  }
+
+  .cta-url {
+    font-size: 14px;
+    color: var(--text3);
+    margin-top: 8px;
+    opacity: 0;
+  }
+
+  /* ===== CONTROLS ===== */
+  .controls {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 1001;
+    display: flex;
+    gap: 8px;
+  }
+
+  .ctrl-btn {
+    padding: 6px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .ctrl-btn:hover {
+    background: var(--bg3);
+    color: var(--text);
+  }
+
+  .ctrl-btn.playing {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+</style>
+</head>
+<body>
+
+<div class="video-progress" id="progress"></div>
+
+<!-- Controls (hidden during recording) -->
+<div class="controls" id="controls">
+  <button class="ctrl-btn" id="playBtn" onclick="togglePlay()">▶ Play</button>
+  <button class="ctrl-btn" onclick="prevScene()">◀ Prev</button>
+  <button class="ctrl-btn" onclick="nextScene()">Next ▶</button>
+  <button class="ctrl-btn" onclick="toggleControls()">Hide UI</button>
+</div>
+
+<!-- SCENE 1: Hook — Email chaos -->
+<div class="scene active" id="scene-0">
+  <div class="hook">
+    <div class="email-stack" id="emailStack">
+      <div class="email-line" id="email1">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span><span class="re">RE:</span> Can you send the bank statements?</span>
+      </div>
+      <div class="email-line" id="email2">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span><span class="re">RE: RE:</span> Which ones did I already send?</span>
+      </div>
+      <div class="email-line" id="email3">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span><span class="re">RE: RE: RE:</span> Sorry, wrong file — here's the right one</span>
+      </div>
+      <div class="email-line" id="email4">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <span><span class="re">RE: RE: RE: RE:</span> Actually, can you resend the list?</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 2: Problem statement -->
+<div class="scene" id="scene-1">
+  <div class="problem">
+    <div class="problem-text" id="problemText">
+      Collecting documents shouldn't feel like this.
+    </div>
+    <div class="problem-sub" id="problemSub">
+      Endless email threads. Wrong files. Missing items. It's a mess.
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 3: Intro -->
+<div class="scene" id="scene-2">
+  <div class="intro">
+    <div class="logo-mark" id="logoMark">
+      <svg viewBox="0 0 32 32">
+        <rect width="32" height="32" rx="6" fill="#1f2937"/>
+        <path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#059669" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <path d="M8 22h8a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#047857" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      </svg>
+      CollectRelay
+    </div>
+    <div class="tagline" id="tagline">Send requests. Collect files. Stay on track.</div>
+    <div class="intro-features">
+      <div class="intro-feat" id="feat1"><span class="dot"></span> One link per client</div>
+      <div class="intro-feat" id="feat2"><span class="dot"></span> No accounts needed</div>
+      <div class="intro-feat" id="feat3"><span class="dot"></span> Real-time tracking</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 4: Dashboard -->
+<div class="scene" id="scene-3">
+  <div class="app-mockup" id="dashMockup">
+    <div class="mock-sidebar">
+      <div class="logo-sm">
+        <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1f2937"/><path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#059669" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
+        CollectRelay
+      </div>
+      <div class="mock-nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="mock-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Transactions
+      </div>
+      <div class="mock-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        Templates
+      </div>
+      <div class="mock-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33"/></svg>
+        Settings
+      </div>
+    </div>
+    <div class="mock-main">
+      <div class="scene-label">Dashboard</div>
+      <div class="stats-row">
+        <div class="stat-card green"><div class="stat-label">Active</div><div class="stat-value">12</div></div>
+        <div class="stat-card yellow"><div class="stat-label">In Review</div><div class="stat-value">5</div></div>
+        <div class="stat-card blue"><div class="stat-label">Completed</div><div class="stat-value">34</div></div>
+        <div class="stat-card purple"><div class="stat-label">Total</div><div class="stat-value">51</div></div>
+      </div>
+      <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Recent Transactions</div>
+      <div class="txn-list">
+        <div class="txn-card">
+          <div class="txn-left">
+            <div class="txn-title">Sarah Johnson — Pre-Approval</div>
+            <div class="txn-client">sarah@email.com</div>
+          </div>
+          <div class="txn-right">
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:75%"></div></div>
+            <span style="font-size:12px;color:var(--text3)">6/8</span>
+            <div class="status-badge active">Active</div>
+          </div>
+        </div>
+        <div class="txn-card">
+          <div class="txn-left">
+            <div class="txn-title">Mike Chen — Purchase Package</div>
+            <div class="txn-client">mike.chen@email.com</div>
+          </div>
+          <div class="txn-right">
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:100%"></div></div>
+            <span style="font-size:12px;color:var(--text3)">10/10</span>
+            <div class="status-badge review">In Review</div>
+          </div>
+        </div>
+        <div class="txn-card">
+          <div class="txn-left">
+            <div class="txn-title">Lisa Park — Refinance Docs</div>
+            <div class="txn-client">lisa.park@email.com</div>
+          </div>
+          <div class="txn-right">
+            <div class="progress-mini"><div class="progress-mini-fill" style="width:40%"></div></div>
+            <span style="font-size:12px;color:var(--text3)">3/8</span>
+            <div class="status-badge active">Active</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 5: Client Portal -->
+<div class="scene" id="scene-4">
+  <div class="client-portal" id="portalMockup">
+    <div class="scene-label" style="position:relative;top:-8px;right:-8px;float:right">Client Portal</div>
+    <div class="portal-header">
+      <h2>Sarah Johnson — Pre-Approval</h2>
+      <div class="due">Please complete by March 15, 2026</div>
+    </div>
+    <div class="portal-progress">
+      <div class="prog-text">3 of 8 items complete</div>
+      <div class="prog-bar"><div class="prog-fill" id="portalFill" style="width:37%"></div></div>
+      <div class="prog-pct" id="portalPct">37%</div>
+    </div>
+    <div class="portal-items">
+      <div class="portal-item">
+        <div class="item-num done">✓</div>
+        <div class="item-name">Pay Stubs (Last 2 Months)</div>
+        <div class="item-badge doc">Doc</div>
+        <div class="item-status accepted">Accepted</div>
+      </div>
+      <div class="portal-item">
+        <div class="item-num done">✓</div>
+        <div class="item-name">Government-Issued ID</div>
+        <div class="item-badge doc">Doc</div>
+        <div class="item-status accepted">Accepted</div>
+      </div>
+      <div class="portal-item">
+        <div class="item-num done">✓</div>
+        <div class="item-name">Current Employer</div>
+        <div class="item-badge q">Question</div>
+        <div class="item-status accepted">Accepted</div>
+      </div>
+      <div class="portal-item" id="uploadItem">
+        <div class="item-num submitted" id="uploadNum">4</div>
+        <div class="item-name">Bank Statements (Last 3 Months)</div>
+        <div class="item-badge doc">Doc</div>
+        <div class="item-status pending" id="uploadStatus">Pending</div>
+      </div>
+      <div class="portal-item">
+        <div class="item-num pending">5</div>
+        <div class="item-name">Tax Returns (Last 2 Years)</div>
+        <div class="item-badge doc">Doc</div>
+        <div class="item-status pending">Pending</div>
+      </div>
+      <div class="portal-item">
+        <div class="item-num pending">6</div>
+        <div class="item-name">Proof of Additional Income</div>
+        <div class="item-badge doc">Doc</div>
+        <div class="item-status pending">Pending</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 6: Review Workflow -->
+<div class="scene" id="scene-5">
+  <div class="review-mockup" id="reviewMockup">
+    <div class="mock-sidebar">
+      <div class="logo-sm">
+        <svg viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#1f2937"/><path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/><path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#059669" stroke-width="2.5" stroke-linecap="round" fill="none"/></svg>
+        CollectRelay
+      </div>
+      <div class="mock-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="mock-nav-item active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Transactions
+        <span style="background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:auto">3</span>
+      </div>
+      <div class="mock-nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        Templates
+      </div>
+    </div>
+    <div class="review-content">
+      <div class="scene-label">Review Workflow</div>
+      <div class="review-header">
+        <h2>Sarah Johnson — Pre-Approval</h2>
+        <div class="status-badge review">In Review</div>
+      </div>
+      <div class="review-items">
+        <div class="review-item" id="reviewItem1">
+          <div class="review-item-top">
+            <div class="r-num">1</div>
+            <div class="r-name">Pay Stubs (Last 2 Months)</div>
+            <div class="activity-dot"></div>
+            <div class="status-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:11px;padding:3px 10px;border-radius:20px">Submitted</div>
+            <div class="review-btns">
+              <button class="btn-sm btn-accept" id="acceptBtn1">✓ Accept</button>
+              <button class="btn-sm btn-reject" id="rejectBtn1">✕ Reject</button>
+            </div>
+          </div>
+          <div class="r-file">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            pay_stubs_jan_feb.pdf — 245 KB
+          </div>
+        </div>
+
+        <div class="review-item" id="reviewItem2">
+          <div class="review-item-top">
+            <div class="r-num">2</div>
+            <div class="r-name">Bank Statements (Last 3 Months)</div>
+            <div class="activity-dot"></div>
+            <div class="status-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:11px;padding:3px 10px;border-radius:20px">Submitted</div>
+            <div class="review-btns">
+              <button class="btn-sm btn-accept" id="acceptBtn2">✓ Accept</button>
+              <button class="btn-sm btn-reject" id="rejectBtn2">✕ Reject</button>
+            </div>
+          </div>
+          <div class="r-file">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            bank_statement_dec.pdf — 312 KB
+          </div>
+          <div class="comment-thread" id="commentThread">
+            <div class="comment-bubble pro">
+              <div class="author">You</div>
+              Need all 3 months — I only see December. Can you upload Jan and Feb too?
+            </div>
+            <div class="comment-bubble client">
+              <div class="author">Sarah Johnson</div>
+              Oh sorry! Uploading now.
+            </div>
+          </div>
+        </div>
+
+        <div class="review-item">
+          <div class="review-item-top">
+            <div class="r-num">3</div>
+            <div class="r-name">Government-Issued ID</div>
+            <div class="status-badge" style="background:rgba(16,185,129,0.15);color:#10b981;font-size:11px;padding:3px 10px;border-radius:20px">Accepted</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Desktop notification -->
+  <div class="desktop-notif" id="desktopNotif">
+    <div class="notif-icon">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    </div>
+    <div class="notif-body">
+      <h4>Sarah Johnson uploaded a document</h4>
+      <p>Bank Statements (Last 3 Months)</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 7: Industries -->
+<div class="scene" id="scene-6">
+  <div class="industries-scene">
+    <h2 id="indTitle">Built for every industry that collects documents</h2>
+    <div class="industry-cards">
+      <div class="industry-card" id="ind1">
+        <div class="ind-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <h3>Real Estate</h3>
+        <p>Mortgages, title docs, closing packages</p>
+      </div>
+      <div class="industry-card" id="ind2">
+        <div class="ind-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+        </div>
+        <h3>Contractors</h3>
+        <p>Permits, insurance, lien waivers</p>
+      </div>
+      <div class="industry-card" id="ind3">
+        <div class="ind-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        </div>
+        <h3>Accountants</h3>
+        <p>Tax returns, K-1s, financial statements</p>
+      </div>
+      <div class="industry-card" id="ind4">
+        <div class="ind-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        </div>
+        <h3>Human Resources</h3>
+        <p>Onboarding, I-9, benefits enrollment</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 8: Security -->
+<div class="scene" id="scene-7">
+  <div class="security-scene">
+    <h2 id="secTitle">Enterprise-grade security</h2>
+    <div class="security-badges">
+      <div class="sec-badge" id="secBadge1">
+        <span class="badge-label">SOC 2</span>
+        <span>Type II</span>
+      </div>
+      <div class="sec-badge" id="secBadge2">
+        <span class="badge-label">ISO</span>
+        <span>27001</span>
+      </div>
+      <div class="sec-badge" id="secBadge3">
+        <span class="badge-label">PCI</span>
+        <span>DSS Level 1</span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-top:8px;opacity:0" id="secNote">Infrastructure certifications via Cloudflare</div>
+    <div class="security-features">
+      <div class="sec-feat" id="secFeat1">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        End-to-end encryption
+      </div>
+      <div class="sec-feat" id="secFeat2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Expiring secure links
+      </div>
+      <div class="sec-feat" id="secFeat3">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Full audit trail
+      </div>
+      <div class="sec-feat" id="secFeat4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Role-based access
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SCENE 9: CTA -->
+<div class="scene" id="scene-8">
+  <div class="cta-scene">
+    <div class="logo-big" id="ctaLogo">
+      <svg viewBox="0 0 32 32">
+        <rect width="32" height="32" rx="6" fill="#1f2937"/>
+        <path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#059669" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+        <path d="M8 22h8a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#047857" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+      </svg>
+      CollectRelay
+    </div>
+    <div class="cta-tagline" id="ctaTagline">Stop chasing documents. Start collecting them.</div>
+    <button class="cta-button" id="ctaBtn">Get started free →</button>
+    <div class="cta-url" id="ctaUrl">collectrelay.com</div>
+  </div>
+</div>
+
+<script>
+const SCENES = [
+  // Scene 0: Hook (emails)
+  {
+    duration: 6000,
+    enter(t) {
+      const stack = document.getElementById('emailStack');
+      stack.style.opacity = '1';
+      const emails = [document.getElementById('email1'), document.getElementById('email2'), document.getElementById('email3'), document.getElementById('email4')];
+      emails.forEach((el, i) => {
+        setTimeout(() => {
+          el.style.transition = 'all 0.4s ease';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, 400 + i * 800);
+      });
+    }
+  },
+  // Scene 1: Problem
+  {
+    duration: 5000,
+    enter() {
+      const text = document.getElementById('problemText');
+      const sub = document.getElementById('problemSub');
+      setTimeout(() => { text.style.transition = 'opacity 0.6s ease'; text.style.opacity = '1'; }, 200);
+      setTimeout(() => { sub.style.transition = 'opacity 0.6s ease'; sub.style.opacity = '1'; }, 1000);
+    }
+  },
+  // Scene 2: Intro
+  {
+    duration: 6000,
+    enter() {
+      const logo = document.getElementById('logoMark');
+      const tag = document.getElementById('tagline');
+      setTimeout(() => { logo.style.transition = 'all 0.6s ease'; logo.style.opacity = '1'; logo.style.transform = 'scale(1)'; }, 200);
+      setTimeout(() => { tag.style.transition = 'opacity 0.6s ease'; tag.style.opacity = '1'; }, 1000);
+      ['feat1','feat2','feat3'].forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          el.style.transition = 'opacity 0.4s ease';
+          el.style.opacity = '1';
+        }, 1800 + i * 400);
+      });
+    }
+  },
+  // Scene 3: Dashboard
+  {
+    duration: 7000,
+    enter() {
+      const mock = document.getElementById('dashMockup');
+      setTimeout(() => { mock.style.transition = 'opacity 0.8s ease'; mock.style.opacity = '1'; }, 200);
+    }
+  },
+  // Scene 4: Client Portal
+  {
+    duration: 8000,
+    enter() {
+      const portal = document.getElementById('portalMockup');
+      setTimeout(() => { portal.style.transition = 'opacity 0.8s ease'; portal.style.opacity = '1'; }, 200);
+      // Animate upload
+      setTimeout(() => {
+        const num = document.getElementById('uploadNum');
+        const status = document.getElementById('uploadStatus');
+        num.className = 'item-num submitted';
+        num.textContent = '↑';
+        status.textContent = 'Uploading...';
+        status.className = 'item-status submitted';
+      }, 3000);
+      setTimeout(() => {
+        const num = document.getElementById('uploadNum');
+        const status = document.getElementById('uploadStatus');
+        num.className = 'item-num done';
+        num.textContent = '✓';
+        status.textContent = 'Submitted';
+        status.className = 'item-status submitted';
+        // Update progress
+        document.getElementById('portalFill').style.width = '50%';
+        document.getElementById('portalPct').textContent = '50%';
+      }, 5000);
+    }
+  },
+  // Scene 5: Review
+  {
+    duration: 10000,
+    enter() {
+      const mock = document.getElementById('reviewMockup');
+      setTimeout(() => { mock.style.transition = 'opacity 0.8s ease'; mock.style.opacity = '1'; }, 200);
+      // Accept first item
+      setTimeout(() => {
+        document.getElementById('acceptBtn1').classList.add('clicked');
+        document.getElementById('acceptBtn1').textContent = '✓ Accepted';
+      }, 2500);
+      // Reject second with comment
+      setTimeout(() => {
+        document.getElementById('rejectBtn2').classList.add('clicked');
+        document.getElementById('rejectBtn2').textContent = '✕ Rejected';
+      }, 4500);
+      // Show comment thread
+      setTimeout(() => {
+        document.getElementById('commentThread').classList.add('show');
+      }, 5500);
+      // Show desktop notification
+      setTimeout(() => {
+        document.getElementById('desktopNotif').classList.add('show');
+      }, 7500);
+    }
+  },
+  // Scene 6: Industries
+  {
+    duration: 6000,
+    enter() {
+      const title = document.getElementById('indTitle');
+      setTimeout(() => { title.style.transition = 'opacity 0.6s ease'; title.style.opacity = '1'; }, 200);
+      ['ind1','ind2','ind3','ind4'].forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          el.style.transition = 'all 0.5s ease';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, 800 + i * 300);
+      });
+    }
+  },
+  // Scene 7: Security
+  {
+    duration: 6000,
+    enter() {
+      const title = document.getElementById('secTitle');
+      setTimeout(() => { title.style.transition = 'opacity 0.6s ease'; title.style.opacity = '1'; }, 200);
+      ['secBadge1','secBadge2','secBadge3'].forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          el.style.transition = 'all 0.5s ease';
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, 800 + i * 300);
+      });
+      setTimeout(() => {
+        document.getElementById('secNote').style.transition = 'opacity 0.4s ease';
+        document.getElementById('secNote').style.opacity = '1';
+      }, 2000);
+      ['secFeat1','secFeat2','secFeat3','secFeat4'].forEach((id, i) => {
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          el.style.transition = 'opacity 0.4s ease';
+          el.style.opacity = '1';
+        }, 2800 + i * 300);
+      });
+    }
+  },
+  // Scene 8: CTA
+  {
+    duration: 8000,
+    enter() {
+      setTimeout(() => {
+        document.getElementById('ctaLogo').style.transition = 'opacity 0.8s ease';
+        document.getElementById('ctaLogo').style.opacity = '1';
+      }, 300);
+      setTimeout(() => {
+        document.getElementById('ctaTagline').style.transition = 'opacity 0.6s ease';
+        document.getElementById('ctaTagline').style.opacity = '1';
+      }, 1200);
+      setTimeout(() => {
+        document.getElementById('ctaBtn').style.transition = 'opacity 0.6s ease';
+        document.getElementById('ctaBtn').style.opacity = '1';
+      }, 2000);
+      setTimeout(() => {
+        document.getElementById('ctaUrl').style.transition = 'opacity 0.6s ease';
+        document.getElementById('ctaUrl').style.opacity = '1';
+      }, 2600);
+    }
+  }
+];
+
+let currentScene = 0;
+let playing = false;
+let timer = null;
+
+function showScene(index) {
+  document.querySelectorAll('.scene').forEach((s, i) => {
+    s.classList.toggle('active', i === index);
+  });
+  currentScene = index;
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = SCENES.reduce((a, s) => a + s.duration, 0);
+  let elapsed = 0;
+  for (let i = 0; i < currentScene; i++) elapsed += SCENES[i].duration;
+  const pct = (elapsed / total) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+}
+
+function enterScene(index) {
+  showScene(index);
+  SCENES[index].enter();
+}
+
+function nextScene() {
+  if (currentScene < SCENES.length - 1) {
+    enterScene(currentScene + 1);
+    if (playing) scheduleNext();
+  } else {
+    playing = false;
+    document.getElementById('playBtn').textContent = '▶ Play';
+    document.getElementById('playBtn').classList.remove('playing');
+    document.getElementById('progress').style.width = '100%';
+  }
+}
+
+function prevScene() {
+  if (currentScene > 0) {
+    // Reset all animated elements by reloading their initial state
+    enterScene(currentScene - 1);
+  }
+}
+
+function scheduleNext() {
+  clearTimeout(timer);
+  timer = setTimeout(nextScene, SCENES[currentScene].duration);
+
+  // Animate progress bar smoothally through this scene
+  const total = SCENES.reduce((a, s) => a + s.duration, 0);
+  let elapsed = 0;
+  for (let i = 0; i < currentScene; i++) elapsed += SCENES[i].duration;
+  const startPct = (elapsed / total) * 100;
+  const endPct = ((elapsed + SCENES[currentScene].duration) / total) * 100;
+  const bar = document.getElementById('progress');
+  bar.style.transition = `width ${SCENES[currentScene].duration}ms linear`;
+  bar.style.width = startPct + '%';
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      bar.style.width = endPct + '%';
+    });
+  });
+}
+
+function togglePlay() {
+  if (playing) {
+    playing = false;
+    clearTimeout(timer);
+    document.getElementById('playBtn').textContent = '▶ Play';
+    document.getElementById('playBtn').classList.remove('playing');
+  } else {
+    playing = true;
+    document.getElementById('playBtn').textContent = '⏸ Pause';
+    document.getElementById('playBtn').classList.add('playing');
+    // If at end, restart
+    if (currentScene >= SCENES.length - 1) {
+      location.reload();
+      return;
+    }
+    if (currentScene === 0) {
+      enterScene(0);
+    }
+    scheduleNext();
+  }
+}
+
+function toggleControls() {
+  const c = document.getElementById('controls');
+  c.style.display = c.style.display === 'none' ? 'flex' : 'none';
+}
+
+// Initialize first scene
+enterScene(0);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+  if (e.code === 'ArrowRight') nextScene();
+  if (e.code === 'ArrowLeft') prevScene();
+  if (e.code === 'KeyH') toggleControls();
+});
+</script>
+
+</body>
+</html>

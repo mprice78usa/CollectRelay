@@ -1,0 +1,29 @@
+name = "collectrelay"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+compatibility_date = "2026-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "collectrelay-db"
+database_id = "426fdaa3-c751-40b8-939f-7097b98279ed"
+
+# R2 Bucket
+[[r2_buckets]]
+binding = "FILES_BUCKET"
+bucket_name = "collectrelay-files"
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "1bdad54acf4d40ce9069e5b36a301aaa"
+
+[[kv_namespaces]]
+binding = "MAGIC_LINKS"
+id = "e319570c7c1643f991819053d6a607d4"
+
+# Note: Cron triggers are not supported in Pages projects.
+# Use an external scheduler (e.g., cron-job.org) to call:
+#   GET /api/cron/reminders (daily reminders)
+#   GET /api/cron/rates (weekday mortgage rate fetch)
