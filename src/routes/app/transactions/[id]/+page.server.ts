@@ -770,4 +770,34 @@ export const actions: Actions = {
 		await updateTransaction(db, params.id, user.workspaceId, { smsEnabled: enabled });
 		return { success: true };
 	},
+
+	updateClient: async ({ request, params, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+		if (!db || !user?.workspaceId) return fail(400, { error: 'Database not available' });
+
+		const formData = await request.formData();
+		const clientName = sanitizeTextInput(formData.get('clientName') as string, 200);
+		const clientEmail = (formData.get('clientEmail') as string)?.trim().toLowerCase();
+		const clientPhone = (formData.get('clientPhone') as string)?.trim() || null;
+
+		if (!clientName || !clientEmail) return fail(400, { error: 'Name and email are required' });
+
+		await updateTransaction(db, params.id, user.workspaceId, {
+			clientName,
+			clientEmail,
+			clientPhone
+		});
+
+		await createAuditEvent(db, {
+			transactionId: params.id,
+			actorType: 'pro',
+			actorId: user.id,
+			actorName: user.name,
+			action: 'client_updated',
+			detail: `Updated client info: ${clientName} (${clientEmail})`
+		});
+
+		return { success: true };
+	},
 };

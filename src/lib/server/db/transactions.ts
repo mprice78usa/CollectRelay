@@ -260,7 +260,7 @@ export async function updateTransaction(
 	db: D1Database,
 	transactionId: string,
 	workspaceId: string,
-	data: { status?: string; title?: string; description?: string; dueDate?: string; smsEnabled?: number }
+	data: { status?: string; title?: string; description?: string; dueDate?: string; smsEnabled?: number; clientName?: string; clientEmail?: string; clientPhone?: string | null }
 ): Promise<void> {
 	const sets: string[] = [];
 	const values: (string | number | null)[] = [];
@@ -270,6 +270,9 @@ export async function updateTransaction(
 	if (data.description !== undefined) { sets.push('description = ?'); values.push(data.description); }
 	if (data.dueDate !== undefined) { sets.push('due_date = ?'); values.push(data.dueDate); }
 	if (data.smsEnabled !== undefined) { sets.push('sms_enabled = ?'); values.push(data.smsEnabled); }
+	if (data.clientName !== undefined) { sets.push('client_name = ?'); values.push(data.clientName); }
+	if (data.clientEmail !== undefined) { sets.push('client_email = ?'); values.push(data.clientEmail); }
+	if (data.clientPhone !== undefined) { sets.push('client_phone = ?'); values.push(data.clientPhone); }
 
 	if (sets.length === 0) return;
 

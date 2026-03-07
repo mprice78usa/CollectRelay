@@ -93,6 +93,19 @@
 	let nudgeSent = $state(false);
 	let nudgeCooldown = $state(false);
 
+	// Edit client state
+	let editingClient = $state(false);
+	let editClientName = $state('');
+	let editClientEmail = $state('');
+	let editClientPhone = $state('');
+
+	function startEditClient() {
+		editClientName = txn.client_name;
+		editClientEmail = txn.client_email;
+		editClientPhone = txn.client_phone || '';
+		editingClient = true;
+	}
+
 	function formatRelativeDate(iso: string | null): string {
 		if (!iso) return 'Never';
 		const diff = Date.now() - new Date(iso).getTime();
@@ -248,10 +261,27 @@
 					<h1>{txn.title}</h1>
 					<Badge variant={statusVariant(txn.status)}>{statusLabel(txn.status)}</Badge>
 				</div>
-				<p class="client-info">
-					{txn.client_name} · {txn.client_email}
-					{#if txn.client_phone} · {txn.client_phone}{/if}
-				</p>
+				{#if editingClient}
+					<form method="POST" action="?/updateClient" use:enhance={() => { return async ({ result, update }) => { if (result.type === 'success') { editingClient = false; } await update(); }; }} class="edit-client-form">
+						<input type="text" name="clientName" value={editClientName} placeholder="Client name" required class="edit-client-input" />
+						<input type="email" name="clientEmail" value={editClientEmail} placeholder="Email" required class="edit-client-input" />
+						<input type="tel" name="clientPhone" value={editClientPhone} placeholder="Phone (+1...)" class="edit-client-input edit-client-phone" />
+						<div class="edit-client-actions">
+							<button type="submit" class="btn-outline-sm btn-success-sm">Save</button>
+							<button type="button" class="btn-outline-sm" onclick={() => editingClient = false}>Cancel</button>
+						</div>
+					</form>
+				{:else}
+					<p class="client-info">
+						{txn.client_name} · {txn.client_email}
+						{#if txn.client_phone} · {txn.client_phone}{/if}
+						<button class="edit-client-btn" onclick={startEditClient} title="Edit client details">
+							<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+							</svg>
+						</button>
+					</p>
+				{/if}
 			</div>
 		</div>
 
@@ -922,6 +952,60 @@
 	.client-info {
 		color: var(--text-secondary);
 		font-size: var(--font-size-sm);
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.edit-client-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 20px;
+		height: 20px;
+		border: none;
+		background: none;
+		color: var(--text-tertiary);
+		cursor: pointer;
+		border-radius: var(--radius-sm);
+		transition: all var(--transition-fast);
+	}
+
+	.edit-client-btn:hover {
+		color: var(--color-accent);
+		background: var(--bg-tertiary);
+	}
+
+	.edit-client-form {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		flex-wrap: wrap;
+		margin-top: var(--space-xs);
+	}
+
+	.edit-client-input {
+		padding: 4px 8px;
+		font-size: var(--font-size-sm);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		color: var(--text-primary);
+		width: 160px;
+	}
+
+	.edit-client-input:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+
+	.edit-client-phone {
+		width: 140px;
+	}
+
+	.edit-client-actions {
+		display: flex;
+		gap: var(--space-xs);
 	}
 
 	.header-meta {
