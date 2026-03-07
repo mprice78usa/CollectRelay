@@ -16,7 +16,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Public marketing pages and auth pages
 	if (PUBLIC_PATHS.some((p) => path === p) || path.startsWith('/industries/') || path.startsWith(PARTNER_PATH_PREFIX)) {
-		return addSecurityHeaders(await resolve(event));
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// Static assets
@@ -37,7 +37,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 				clientName: 'Sarah Johnson',
 				token
 			};
-			return addSecurityHeaders(await resolve(event));
+			return addSecurityHeaders(await resolve(event), path);
 		}
 
 		if (token && event.platform?.env?.MAGIC_LINKS) {
@@ -58,12 +58,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 					sameSite: 'lax',
 					maxAge: 72 * 60 * 60 // 72 hours (matches magic link expiry)
 				});
-				return addSecurityHeaders(await resolve(event));
+				return addSecurityHeaders(await resolve(event), path);
 			}
 		}
 
 		// Invalid or expired token — still resolve (page will show error)
-		return addSecurityHeaders(await resolve(event));
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// API health + Stripe webhook (no auth needed, Stripe signs these)
@@ -79,7 +79,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			name: 'Dev User',
 			workspaceId: 'dev-workspace'
 		};
-		return addSecurityHeaders(await resolve(event));
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// API routes: try to load user session but don't redirect (endpoints return proper JSON errors)
@@ -119,7 +119,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		}
 
 		// Always resolve — endpoints handle their own auth (return 401 JSON, not redirects)
-		return addSecurityHeaders(await resolve(event));
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// All /app/ routes require Pro auth — redirect to login if not authenticated
@@ -150,16 +150,18 @@ export const handle: Handle = async ({ event, resolve }) => {
 			workspaceId: workspace?.id || ''
 		};
 
-		return addSecurityHeaders(await resolve(event));
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// Default: resolve
-	return addSecurityHeaders(await resolve(event));
+	return addSecurityHeaders(await resolve(event), path);
 };
 
-function addSecurityHeaders(response: Response): Response {
-	// Prevent clickjacking
-	response.headers.set('X-Frame-Options', 'DENY');
+function addSecurityHeaders(response: Response, path: string): Response {
+	// Allow same-origin framing for file previews (PDFs/images in iframe),
+	// but deny framing for everything else to prevent clickjacking
+	const isFileRoute = path.startsWith('/api/files/');
+	response.headers.set('X-Frame-Options', isFileRoute ? 'SAMEORIGIN' : 'DENY');
 	// Prevent MIME-type sniffing
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	// Control referrer information
@@ -167,6 +169,7 @@ function addSecurityHeaders(response: Response): Response {
 	// Force HTTPS for 1 year, include subdomains
 	response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
 	// Content Security Policy — restrict script/style/connect sources
+	// File routes need frame-ancestors 'self' so our preview modal can iframe them
 	response.headers.set(
 		'Content-Security-Policy',
 		[
@@ -176,7 +179,7 @@ function addSecurityHeaders(response: Response): Response {
 			"img-src 'self' data: blob:",
 			"font-src 'self'",
 			"connect-src 'self' https://api.resend.com https://api.stripe.com https://api.twilio.com",
-			"frame-ancestors 'none'",
+			isFileRoute ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
 			"base-uri 'self'",
 			"form-action 'self' https://checkout.stripe.com"
 		].join('; ')

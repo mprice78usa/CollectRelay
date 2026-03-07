@@ -279,6 +279,7 @@
 							<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 								<path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
 							</svg>
+							Edit
 						</button>
 					</p>
 				{/if}
@@ -961,19 +962,21 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 20px;
-		height: 20px;
-		border: none;
-		background: none;
-		color: var(--text-tertiary);
+		padding: 4px 8px;
+		gap: 4px;
+		border: 1px solid var(--border-color);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
 		cursor: pointer;
-		border-radius: var(--radius-sm);
+		border-radius: var(--radius-md);
 		transition: all var(--transition-fast);
+		font-size: 11px;
+		font-weight: 500;
 	}
 
 	.edit-client-btn:hover {
 		color: var(--color-accent);
-		background: var(--bg-tertiary);
+		border-color: var(--color-accent);
 	}
 
 	.edit-client-form {
