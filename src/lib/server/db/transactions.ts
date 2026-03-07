@@ -25,6 +25,7 @@ export interface DbTransaction {
 	updated_at: string;
 	completed_at: string | null;
 	last_reminder_at: string | null;
+	sms_enabled: number;
 }
 
 export interface DbCustomField {
@@ -259,15 +260,16 @@ export async function updateTransaction(
 	db: D1Database,
 	transactionId: string,
 	workspaceId: string,
-	data: { status?: string; title?: string; description?: string; dueDate?: string }
+	data: { status?: string; title?: string; description?: string; dueDate?: string; smsEnabled?: number }
 ): Promise<void> {
 	const sets: string[] = [];
-	const values: (string | null)[] = [];
+	const values: (string | number | null)[] = [];
 
 	if (data.status !== undefined) { sets.push('status = ?'); values.push(data.status); }
 	if (data.title !== undefined) { sets.push('title = ?'); values.push(data.title); }
 	if (data.description !== undefined) { sets.push('description = ?'); values.push(data.description); }
 	if (data.dueDate !== undefined) { sets.push('due_date = ?'); values.push(data.dueDate); }
+	if (data.smsEnabled !== undefined) { sets.push('sms_enabled = ?'); values.push(data.smsEnabled); }
 
 	if (sets.length === 0) return;
 

@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ platform, url }) => {
         // - has outstanding (pending/rejected) items
         // - last_reminder_at is null or older than reminder_interval_days
         const transactions = await db.prepare(
-            `SELECT t.id, t.title, t.client_name, t.client_email, t.client_phone,
+            `SELECT t.id, t.title, t.client_name, t.client_email, t.client_phone, t.sms_enabled,
                     t.reminder_interval_days, t.last_reminder_at,
                     u.name as pro_name, u.email as pro_email
              FROM transactions t
@@ -53,8 +53,8 @@ export const GET: RequestHandler = async ({ platform, url }) => {
                         magicLinkUrl
                     });
 
-                    // Send SMS if client has phone number
-                    if (txn.client_phone) {
+                    // Send SMS if enabled and client has phone number
+                    if (txn.client_phone && txn.sms_enabled) {
                         const { sendReminderSms } = await import('$lib/server/sms');
                         await sendReminderSms(platform.env, {
                             to: txn.client_phone,

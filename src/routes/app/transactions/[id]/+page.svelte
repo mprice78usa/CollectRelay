@@ -423,6 +423,22 @@
 		{#if txn.status === 'active' && txn.last_reminder_at}
 			<p class="last-reminder-info">Last reminder sent {formatRelativeDate(txn.last_reminder_at)}</p>
 		{/if}
+		{#if txn.client_phone}
+			<div class="sms-toggle-row">
+				<form method="POST" action="?/toggleSms" use:enhance>
+					<input type="hidden" name="enabled" value={txn.sms_enabled ? '0' : '1'} />
+					<button type="submit" class="sms-toggle-btn" class:sms-on={txn.sms_enabled}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+						</svg>
+						SMS {txn.sms_enabled ? 'On' : 'Off'}
+					</button>
+				</form>
+				<span class="sms-toggle-hint">
+					{txn.sms_enabled ? 'Client will receive text messages with emails' : 'Client will only receive emails'}
+				</span>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Checklist items -->
@@ -995,6 +1011,46 @@
 		font-size: var(--font-size-xs);
 		color: var(--text-tertiary);
 		margin-top: var(--space-sm);
+	}
+
+	.sms-toggle-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		margin-top: var(--space-md);
+		padding-top: var(--space-md);
+		border-top: 1px solid var(--border-color);
+	}
+
+	.sms-toggle-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 4px 12px;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		border-radius: var(--radius-full);
+		border: 1px solid var(--border-color);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.sms-toggle-btn:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
+	.sms-toggle-btn.sms-on {
+		background: rgba(16, 185, 129, 0.1);
+		border-color: rgba(16, 185, 129, 0.3);
+		color: var(--color-success);
+	}
+
+	.sms-toggle-hint {
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
 	}
 
 	.file-preview-btn {

@@ -215,8 +215,8 @@ export const actions: Actions = {
 			magicLinkUrl
 		});
 
-		// Send SMS if client has phone number
-		if (transaction.client_phone) {
+		// Send SMS if enabled and client has phone number
+		if (transaction.client_phone && transaction.sms_enabled) {
 			const { sendMagicLinkSms } = await import('$lib/server/sms');
 			await sendMagicLinkSms(platform!.env, {
 				to: transaction.client_phone,
@@ -602,8 +602,8 @@ export const actions: Actions = {
 			magicLinkUrl
 		});
 
-		// Send reminder SMS if client has phone number
-		if (transaction.client_phone) {
+		// Send reminder SMS if enabled and client has phone number
+		if (transaction.client_phone && transaction.sms_enabled) {
 			const { sendReminderSms } = await import('$lib/server/sms');
 			await sendReminderSms(platform!.env, {
 				to: transaction.client_phone,
@@ -756,6 +756,18 @@ export const actions: Actions = {
 		if (!linkId) return fail(400, { error: 'Link ID required' });
 
 		await revokePartnerLink(db, linkId, params.id);
+		return { success: true };
+	},
+
+	toggleSms: async ({ request, params, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+		if (!db || !user?.workspaceId) return fail(400, { error: 'Database not available' });
+
+		const formData = await request.formData();
+		const enabled = parseInt(formData.get('enabled') as string);
+
+		await updateTransaction(db, params.id, user.workspaceId, { smsEnabled: enabled });
 		return { success: true };
 	},
 };
