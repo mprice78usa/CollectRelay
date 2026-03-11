@@ -1,18 +1,27 @@
 <script lang="ts">
 	let { data, children } = $props();
+
+	const branding = data.branding;
+	const hasCustomLogo = !!branding?.brand_logo_r2_key;
+	const brandName = branding?.brand_name || 'CollectRelay';
+	const brandColor = branding?.brand_color || null;
 </script>
 
-<div class="client-shell">
+<div class="client-shell" style={brandColor ? `--color-accent: ${brandColor}; --color-accent-hover: ${brandColor}` : ''}>
 	<header class="client-header">
 		<div class="header-inner">
 			<a href="/" class="client-logo">
-				<svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
-					<rect width="32" height="32" rx="6" fill="#1a1f2e"/>
-					<path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-					<path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#34d399" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-					<path d="M8 22h8a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="#6ee7b7" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-				</svg>
-				<span>CollectRelay</span>
+				{#if hasCustomLogo}
+					<img src="/api/files/{branding.brand_logo_r2_key}" alt="{brandName}" class="brand-logo-img" />
+				{:else}
+					<svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
+						<rect width="32" height="32" rx="6" fill="#1a1f2e"/>
+						<path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="{brandColor || '#10b981'}" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+						<path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="{brandColor || '#34d399'}" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+						<path d="M8 22h8a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="{brandColor || '#6ee7b7'}" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+					</svg>
+				{/if}
+				<span>{brandName}</span>
 			</a>
 			<span class="client-name">Hi, {data.clientSession.clientName}</span>
 		</div>
@@ -59,6 +68,13 @@
 	}
 
 	.client-logo:hover { color: var(--text-primary); }
+
+	.brand-logo-img {
+		width: 28px;
+		height: 28px;
+		object-fit: contain;
+		border-radius: 4px;
+	}
 
 	.client-name {
 		color: var(--text-secondary);

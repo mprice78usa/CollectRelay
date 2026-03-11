@@ -12,6 +12,12 @@
 	let loadingPortal = $state(false);
 	let savingNotifs = $state(false);
 	let notifsSaved = $state(false);
+	let savingBranding = $state(false);
+	let brandingSaved = $state(false);
+	let uploadingLogo = $state(false);
+	let logoPreview = $state<string | null>(null);
+	let brandColor = $state(data.branding?.brand_color || '');
+	let brandName = $state(data.branding?.brand_name || '');
 	let desktopNotifPermission = $state<string>('default');
 
 	// Webhooks
@@ -157,6 +163,45 @@
 		setter(true);
 		setTimeout(() => setter(false), 2000);
 	}
+
+	async function handleLogoUpload(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		// Show preview immediately
+		logoPreview = URL.createObjectURL(file);
+		uploadingLogo = true;
+
+		try {
+			const formData = new FormData();
+			formData.append('logo', file);
+			const res = await fetch('/api/branding/logo', { method: 'POST', body: formData });
+			if (!res.ok) {
+				const err = await res.json();
+				alert(err.message || 'Upload failed');
+				logoPreview = null;
+			}
+		} catch {
+			alert('Upload failed');
+			logoPreview = null;
+		} finally {
+			uploadingLogo = false;
+		}
+	}
+
+	async function removeLogo() {
+		uploadingLogo = true;
+		try {
+			await fetch('/api/branding/logo', { method: 'DELETE' });
+			logoPreview = null;
+			data.branding.brand_logo_r2_key = null;
+		} catch {
+			// ignore
+		} finally {
+			uploadingLogo = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -295,6 +340,122 @@
 					{/if}
 					<button type="submit" class="btn-primary" disabled={savingWorkspace}>
 						{savingWorkspace ? 'Saving...' : 'Save Workspace'}
+					</button>
+				</div>
+			</form>
+		</Card>
+	</section>
+
+	<!-- Branding Section -->
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="section-icon">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+				</svg>
+			</div>
+			<div>
+				<h2>Branding</h2>
+				<p class="section-desc">Customize how your client portal looks to clients.</p>
+			</div>
+		</div>
+
+		<Card>
+			<!-- Logo Upload -->
+			<div class="branding-logo-section">
+				<label class="form-label">Logo</label>
+				<p class="form-hint">Displayed in the client portal header. PNG, JPG, SVG, or WebP. Max 2MB.</p>
+				<div class="logo-upload-row">
+					<div class="logo-preview">
+						{#if logoPreview || data.branding?.brand_logo_r2_key}
+							<img
+								src={logoPreview || `/api/files/${data.branding.brand_logo_r2_key}`}
+								alt="Brand logo"
+								class="logo-img"
+							/>
+						{:else}
+							<div class="logo-placeholder">
+								<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+									<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/>
+								</svg>
+							</div>
+						{/if}
+					</div>
+					<div class="logo-actions">
+						<label class="btn-secondary btn-sm logo-upload-btn">
+							{uploadingLogo ? 'Uploading...' : 'Upload Logo'}
+							<input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onchange={handleLogoUpload} hidden />
+						</label>
+						{#if data.branding?.brand_logo_r2_key || logoPreview}
+							<button type="button" class="btn-ghost btn-sm" onclick={removeLogo} disabled={uploadingLogo}>Remove</button>
+						{/if}
+					</div>
+				</div>
+			</div>
+
+			<form
+				method="POST"
+				action="?/updateBranding"
+				use:enhance={() => {
+					savingBranding = true;
+					return async ({ update }) => {
+						savingBranding = false;
+						showSavedBriefly((v) => (brandingSaved = v));
+						await update();
+					};
+				}}
+			>
+				<div class="form-grid">
+					<div class="form-group">
+						<label for="brand-name">Business Name</label>
+						<input type="text" id="brand-name" name="brandName" bind:value={brandName} placeholder="Shown instead of CollectRelay" />
+						<span class="form-hint">Replaces "CollectRelay" in the client portal header.</span>
+					</div>
+					<div class="form-group">
+						<label for="brand-color">Accent Color</label>
+						<div class="color-input-row">
+							<input type="color" id="brand-color-picker" value={brandColor || '#10B981'} oninput={(e) => brandColor = (e.target as HTMLInputElement).value} class="color-picker" />
+							<input type="text" id="brand-color" name="brandColor" bind:value={brandColor} placeholder="#10B981" pattern="^#[0-9a-fA-F]{6}$" class="color-text" />
+						</div>
+						<span class="form-hint">Used for buttons and highlights in the client portal.</span>
+					</div>
+				</div>
+
+				<!-- Live Preview -->
+				<div class="branding-preview" style="--preview-accent: {brandColor || '#10B981'}">
+					<div class="preview-label">Client Portal Preview</div>
+					<div class="preview-header">
+						{#if logoPreview || data.branding?.brand_logo_r2_key}
+							<img src={logoPreview || `/api/files/${data.branding.brand_logo_r2_key}`} alt="" class="preview-logo" />
+						{:else}
+							<svg viewBox="0 0 32 32" width="24" height="24" class="preview-logo-svg">
+								<rect width="32" height="32" rx="6" fill="var(--preview-accent)" opacity="0.15"/>
+								<path d="M8 10h10a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="var(--preview-accent)" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+								<path d="M8 16h12a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2H8" stroke="var(--preview-accent)" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.7"/>
+							</svg>
+						{/if}
+						<span class="preview-name">{brandName || 'CollectRelay'}</span>
+					</div>
+					<div class="preview-body">
+						<div class="preview-btn" style="background: var(--preview-accent)">Upload Documents</div>
+					</div>
+				</div>
+
+				{#if form?.error && form?.section === 'branding'}
+					<p class="form-error">{form.error}</p>
+				{/if}
+
+				<div class="form-footer">
+					{#if brandingSaved}
+						<span class="saved-indicator">
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="20 6 9 17 4 12" />
+							</svg>
+							Saved
+						</span>
+					{/if}
+					<button type="submit" class="btn-primary" disabled={savingBranding}>
+						{savingBranding ? 'Saving...' : 'Save Branding'}
 					</button>
 				</div>
 			</form>
@@ -1331,11 +1492,182 @@
 		color: var(--color-accent);
 	}
 
+	/* Branding section */
+	.branding-logo-section {
+		margin-bottom: var(--space-xl);
+		padding-bottom: var(--space-xl);
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.form-label {
+		display: block;
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--space-xs);
+	}
+
+	.form-hint {
+		display: block;
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+		margin-top: 4px;
+	}
+
+	.logo-upload-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-lg);
+		margin-top: var(--space-md);
+	}
+
+	.logo-preview {
+		width: 72px;
+		height: 72px;
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		border: 1px solid var(--border-color);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--bg-primary);
+		flex-shrink: 0;
+	}
+
+	.logo-img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	.logo-placeholder {
+		color: var(--text-tertiary);
+	}
+
+	.logo-actions {
+		display: flex;
+		gap: var(--space-sm);
+		align-items: center;
+	}
+
+	.logo-upload-btn {
+		cursor: pointer;
+	}
+
+	.btn-sm {
+		padding: var(--space-xs) var(--space-md);
+		font-size: var(--font-size-xs);
+	}
+
+	.btn-ghost {
+		background: none;
+		border: 1px solid var(--border-color);
+		color: var(--text-secondary);
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.btn-ghost:hover {
+		border-color: var(--color-error);
+		color: var(--color-error);
+	}
+
+	.color-input-row {
+		display: flex;
+		gap: var(--space-sm);
+		align-items: center;
+	}
+
+	.color-picker {
+		width: 40px;
+		height: 40px;
+		border: none;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		background: none;
+		padding: 0;
+	}
+
+	.color-picker::-webkit-color-swatch-wrapper {
+		padding: 2px;
+	}
+
+	.color-picker::-webkit-color-swatch {
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-color);
+	}
+
+	.color-text {
+		width: 120px;
+		font-family: var(--font-mono);
+		font-size: var(--font-size-sm);
+	}
+
+	/* Branding preview */
+	.branding-preview {
+		margin: var(--space-xl) 0;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+	}
+
+	.preview-label {
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		font-weight: 600;
+		padding: var(--space-sm) var(--space-md);
+		border-bottom: 1px solid var(--border-color);
+		background: var(--bg-secondary);
+	}
+
+	.preview-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-md) var(--space-lg);
+		background: #1a1f2e;
+	}
+
+	.preview-logo {
+		width: 28px;
+		height: 28px;
+		object-fit: contain;
+		border-radius: var(--radius-sm);
+	}
+
+	.preview-logo-svg {
+		flex-shrink: 0;
+	}
+
+	.preview-name {
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		color: white;
+	}
+
+	.preview-body {
+		padding: var(--space-lg);
+		background: var(--bg-primary);
+		display: flex;
+		justify-content: center;
+	}
+
+	.preview-btn {
+		padding: var(--space-sm) var(--space-xl);
+		border-radius: var(--radius-md);
+		color: white;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
 	@media (max-width: 640px) {
 		.form-grid { grid-template-columns: 1fr; }
 		.workspace-meta { flex-direction: column; gap: var(--space-md); }
 		.webhook-header { flex-direction: column; }
 		.webhook-actions { flex-wrap: wrap; }
 		.event-checkboxes { grid-template-columns: 1fr; }
+		.logo-upload-row { flex-direction: column; align-items: flex-start; }
 	}
 </style>

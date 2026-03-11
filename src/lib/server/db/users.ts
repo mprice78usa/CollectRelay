@@ -73,7 +73,12 @@ export async function getWorkspaceForUser(
 export async function updateWorkspace(
 	db: D1Database,
 	workspaceId: string,
-	data: { name?: string }
+	data: {
+		name?: string;
+		brand_logo_r2_key?: string | null;
+		brand_color?: string | null;
+		brand_name?: string | null;
+	}
 ): Promise<void> {
 	const sets: string[] = [];
 	const values: (string | null)[] = [];
@@ -81,6 +86,18 @@ export async function updateWorkspace(
 	if (data.name !== undefined) {
 		sets.push('name = ?');
 		values.push(data.name);
+	}
+	if (data.brand_logo_r2_key !== undefined) {
+		sets.push('brand_logo_r2_key = ?');
+		values.push(data.brand_logo_r2_key);
+	}
+	if (data.brand_color !== undefined) {
+		sets.push('brand_color = ?');
+		values.push(data.brand_color);
+	}
+	if (data.brand_name !== undefined) {
+		sets.push('brand_name = ?');
+		values.push(data.brand_name);
 	}
 
 	if (sets.length === 0) return;
@@ -92,6 +109,22 @@ export async function updateWorkspace(
 		.prepare(`UPDATE workspaces SET ${sets.join(', ')} WHERE id = ?`)
 		.bind(...values)
 		.run();
+}
+
+export interface WorkspaceBranding {
+	brand_logo_r2_key: string | null;
+	brand_color: string | null;
+	brand_name: string | null;
+}
+
+export async function getWorkspaceBranding(
+	db: D1Database,
+	workspaceId: string
+): Promise<WorkspaceBranding | null> {
+	return db
+		.prepare('SELECT brand_logo_r2_key, brand_color, brand_name FROM workspaces WHERE id = ?')
+		.bind(workspaceId)
+		.first<WorkspaceBranding>();
 }
 
 export async function updateUser(

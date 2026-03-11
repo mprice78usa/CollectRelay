@@ -1,4 +1,4 @@
-import { getUserById, getWorkspaceForUser, updateUser, updateWorkspace, getBillingInfo, updateNotificationPrefs } from '$lib/server/db/users';
+import { getUserById, getWorkspaceForUser, updateUser, updateWorkspace, getBillingInfo, updateNotificationPrefs, getWorkspaceBranding } from '$lib/server/db/users';
 import { getWebhooksForWorkspace } from '$lib/server/db/webhooks';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
@@ -38,15 +38,21 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				notifyReviewReminders: 1,
 				notifyCompleted: 1
 			},
+			branding: {
+				brand_logo_r2_key: null as string | null,
+				brand_color: null as string | null,
+				brand_name: null as string | null
+			},
 			webhooks: [] as any[]
 		};
 	}
 
-	const [dbUser, workspace, billing, webhooksRaw] = await Promise.all([
+	const [dbUser, workspace, billing, webhooksRaw, branding] = await Promise.all([
 		getUserById(db, user.id),
 		getWorkspaceForUser(db, user.id),
 		getBillingInfo(db, user.workspaceId),
-		getWebhooksForWorkspace(db, user.workspaceId)
+		getWebhooksForWorkspace(db, user.workspaceId),
+		getWorkspaceBranding(db, user.workspaceId)
 	]);
 
 	const webhooks = webhooksRaw.map((w) => ({
@@ -65,6 +71,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		},
 		workspace: workspace ?? { id: user.workspaceId, name: 'My Workspace', role: 'owner' },
 		billing,
+		branding: branding ?? { brand_logo_r2_key: null, brand_color: null, brand_name: null },
 		notificationPrefs: {
 			notifySubmissions: dbUser?.notify_submissions ?? 1,
 			notifyReviewReminders: dbUser?.notify_review_reminders ?? 1,
@@ -124,5 +131,27 @@ export const actions: Actions = {
 		});
 
 		return { success: true, section: 'notifications' };
+	},
+
+	updateBranding: async ({ request, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+		if (!db || !user) return fail(401, { error: 'Unauthorized' });
+
+		const data = await request.formData();
+		const brandColor = data.get('brandColor')?.toString().trim() || null;
+		const brandName = data.get('brandName')?.toString().trim() || null;
+
+		// Validate hex color if provided
+		if (brandColor && !/^#[0-9a-fA-F]{6}$/.test(brandColor)) {
+			return fail(400, { error: 'Invalid color format. Use hex (e.g. #10B981)', section: 'branding' });
+		}
+
+		await updateWorkspace(db, user.workspaceId, {
+			brand_color: brandColor,
+			brand_name: brandName
+		});
+
+		return { success: true, section: 'branding' };
 	}
 };
