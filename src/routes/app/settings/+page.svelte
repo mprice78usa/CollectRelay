@@ -395,6 +395,108 @@
 		</Card>
 	</section>
 
+	<!-- Team Section -->
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="section-icon">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+				</svg>
+			</div>
+			<div>
+				<h2>Team</h2>
+				<p class="section-desc">Manage workspace members and invitations.</p>
+			</div>
+		</div>
+
+		<Card>
+			<!-- Current Members -->
+			<div class="team-list">
+				{#each data.members as member}
+					<div class="team-row">
+						<div class="team-info">
+							<div class="team-avatar">{member.name.charAt(0).toUpperCase()}</div>
+							<div>
+								<div class="team-name">{member.name}</div>
+								<div class="team-email">{member.email}</div>
+							</div>
+						</div>
+						<div class="team-actions">
+							<span class="role-badge role-{member.role}">{member.role}</span>
+							{#if member.role !== 'owner' && (data.workspace.role === 'owner' || data.workspace.role === 'admin')}
+								<form method="POST" action="?/changeMemberRole" use:enhance class="inline-form">
+									<input type="hidden" name="userId" value={member.userId} />
+									<select name="role" onchange={(e) => { (e.target as HTMLSelectElement).form?.requestSubmit(); }}>
+										<option value="member" selected={member.role === 'member'}>Member</option>
+										<option value="admin" selected={member.role === 'admin'}>Admin</option>
+									</select>
+								</form>
+								<form method="POST" action="?/removeMember" use:enhance class="inline-form" onsubmit={(e) => { if (!confirm(`Remove ${member.name} from the workspace?`)) e.preventDefault(); }}>
+									<input type="hidden" name="userId" value={member.userId} />
+									<button type="submit" class="btn-icon-danger" title="Remove member">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+										</svg>
+									</button>
+								</form>
+							{/if}
+						</div>
+					</div>
+				{/each}
+			</div>
+
+			<!-- Pending Invitations -->
+			{#if data.invitations.length > 0}
+				<div class="invitations-section">
+					<h3 class="subsection-title">Pending Invitations</h3>
+					{#each data.invitations as inv}
+						<div class="team-row invitation-row">
+							<div class="team-info">
+								<div class="team-avatar pending">?</div>
+								<div>
+									<div class="team-name">{inv.email}</div>
+									<div class="team-email">Invited as {inv.role} &middot; Expires {new Date(inv.expiresAt).toLocaleDateString()}</div>
+								</div>
+							</div>
+							<div class="team-actions">
+								<form method="POST" action="?/resendInvitation" use:enhance class="inline-form">
+									<input type="hidden" name="invitationId" value={inv.id} />
+									<button type="submit" class="btn-sm btn-secondary">Resend</button>
+								</form>
+								<form method="POST" action="?/revokeInvitation" use:enhance class="inline-form">
+									<input type="hidden" name="invitationId" value={inv.id} />
+									<button type="submit" class="btn-sm btn-danger">Revoke</button>
+								</form>
+							</div>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Invite Form -->
+			{#if data.workspace.role === 'owner' || data.workspace.role === 'admin'}
+				<div class="invite-form-section">
+					<h3 class="subsection-title">Invite a Team Member</h3>
+					{#if form?.error && form?.section === 'team'}
+						<div class="form-error">{form.error}</div>
+					{/if}
+					<form method="POST" action="?/inviteMember" use:enhance class="invite-form">
+						<div class="form-group" style="flex: 1;">
+							<input type="email" name="email" placeholder="colleague@example.com" required />
+						</div>
+						<div class="form-group">
+							<select name="role">
+								<option value="member">Member</option>
+								<option value="admin">Admin</option>
+							</select>
+						</div>
+						<button type="submit" class="btn-primary">Send Invite</button>
+					</form>
+				</div>
+			{/if}
+		</Card>
+	</section>
+
 	<!-- Branding Section -->
 	<section class="settings-section">
 		<div class="section-header">
@@ -1943,5 +2045,186 @@
 		.logo-upload-row { flex-direction: column; align-items: flex-start; }
 		.api-key-item { flex-direction: column; align-items: flex-start; }
 		.api-key-meta { flex-wrap: wrap; }
+		.invite-form { flex-direction: column; }
+		.team-row { flex-direction: column; gap: var(--space-sm); }
+		.team-actions { justify-content: flex-start; }
+	}
+
+	/* Team Section */
+	.team-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.team-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-md) 0;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.team-row:last-child {
+		border-bottom: none;
+	}
+
+	.team-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+	}
+
+	.team-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 50%;
+		background: var(--color-accent);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-weight: 600;
+		font-size: var(--font-size-sm);
+		flex-shrink: 0;
+	}
+
+	.team-avatar.pending {
+		background: var(--bg-tertiary);
+		color: var(--text-muted);
+	}
+
+	.team-name {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--text-primary);
+	}
+
+	.team-email {
+		font-size: 12px;
+		color: var(--text-muted);
+	}
+
+	.team-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.role-badge {
+		font-size: 11px;
+		font-weight: 600;
+		padding: 2px 8px;
+		border-radius: 10px;
+		text-transform: capitalize;
+	}
+
+	.role-owner {
+		background: rgba(139, 92, 246, 0.15);
+		color: #a78bfa;
+	}
+
+	.role-admin {
+		background: rgba(59, 130, 246, 0.15);
+		color: #60a5fa;
+	}
+
+	.role-member {
+		background: var(--bg-tertiary);
+		color: var(--text-muted);
+	}
+
+	.inline-form {
+		display: inline-flex;
+	}
+
+	.inline-form select {
+		font-size: 12px;
+		padding: 2px 6px;
+		background: var(--bg-secondary);
+		color: var(--text-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-sm);
+	}
+
+	.btn-icon-danger {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		padding: 4px;
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+
+	.btn-icon-danger:hover {
+		color: #ef4444;
+		background: rgba(239, 68, 68, 0.1);
+	}
+
+	.btn-sm {
+		font-size: 12px;
+		padding: 4px 10px;
+		border-radius: var(--radius-sm);
+		border: none;
+		cursor: pointer;
+		font-weight: 500;
+	}
+
+	.btn-sm.btn-secondary {
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
+	}
+
+	.btn-sm.btn-secondary:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+	}
+
+	.btn-sm.btn-danger {
+		background: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+	}
+
+	.btn-sm.btn-danger:hover {
+		background: rgba(239, 68, 68, 0.2);
+	}
+
+	.invitations-section {
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+		border-top: 1px solid var(--border-color);
+	}
+
+	.subsection-title {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--text-secondary);
+		margin-bottom: var(--space-sm);
+	}
+
+	.invite-form-section {
+		margin-top: var(--space-lg);
+		padding-top: var(--space-lg);
+		border-top: 1px solid var(--border-color);
+	}
+
+	.invite-form {
+		display: flex;
+		gap: var(--space-sm);
+		align-items: flex-end;
+	}
+
+	.invite-form input,
+	.invite-form select {
+		padding: var(--space-sm) var(--space-md);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		color: var(--text-primary);
+		font-size: var(--font-size-sm);
+	}
+
+	.invitation-row {
+		opacity: 0.7;
 	}
 </style>

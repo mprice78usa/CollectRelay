@@ -9,6 +9,7 @@
 		{ href: '/app/notifications', label: 'Activity', exact: false, icon: 'activity' },
 		{ href: '/app/templates', label: 'Templates', exact: false, icon: 'templates' },
 		{ href: '/app/documents', label: 'Documents', exact: false, icon: 'documents' },
+		{ href: '/app/reports', label: 'Reports', exact: false, icon: 'reports' },
 		{ href: '/app/settings', label: 'Settings', exact: false, icon: 'settings' }
 	];
 
@@ -59,6 +60,10 @@
 					{:else if item.icon === 'documents'}
 						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+						</svg>
+					{:else if item.icon === 'reports'}
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
 						</svg>
 					{:else if item.icon === 'settings'}
 						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">

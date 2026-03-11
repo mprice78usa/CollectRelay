@@ -239,6 +239,26 @@ export async function sendReminderEmail(
 	});
 }
 
+// --- Team Invite Emails ---
+
+export async function sendTeamInviteEmail(
+	env: App.Platform['env'],
+	params: { to: string; inviterName: string; workspaceName: string; role: string; inviteUrl: string }
+): Promise<boolean> {
+	const inviter = escapeHtml(params.inviterName);
+	const workspace = escapeHtml(params.workspaceName);
+	const role = escapeHtml(params.role);
+	return sendNotificationEmail(env, {
+		to: params.to,
+		subject: `${params.inviterName} invited you to join ${params.workspaceName} on CollectRelay`,
+		heading: 'Team Invitation',
+		body: `${inviter} has invited you to join <strong>${workspace}</strong> as a <strong>${role}</strong>.<br><br>Click below to accept the invitation and get started. This link expires in 7 days.`,
+		ctaText: 'Accept Invitation',
+		ctaUrl: params.inviteUrl,
+		fromName: params.inviterName
+	});
+}
+
 // --- Partner Portal Emails ---
 
 export async function sendPartnerInviteEmail(

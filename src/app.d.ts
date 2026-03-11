@@ -10,6 +10,7 @@ declare global {
 				email: string;
 				name: string;
 				workspaceId: string;
+				role: string;
 			} | null;
 			clientSession: {
 				transactionId: string;

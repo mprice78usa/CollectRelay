@@ -138,7 +138,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 			id: 'dev-user',
 			email: 'dev@collectrelay.com',
 			name: 'Dev User',
-			workspaceId: 'dev-workspace'
+			workspaceId: 'dev-workspace',
+			role: 'owner'
 		};
 		return addSecurityHeaders(await resolve(event), path);
 	}
@@ -157,7 +158,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 						id: user.id,
 						email: user.email,
 						name: user.name,
-						workspaceId: workspace?.id || ''
+						workspaceId: workspace?.id || '',
+						role: workspace?.role || 'member'
 					};
 				}
 			}
@@ -208,7 +210,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 			id: user.id,
 			email: user.email,
 			name: user.name,
-			workspaceId: workspace?.id || ''
+			workspaceId: workspace?.id || '',
+			role: workspace?.role || 'member'
 		};
 
 		// Onboarding redirect — new users must complete onboarding first
