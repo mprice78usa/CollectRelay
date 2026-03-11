@@ -5,12 +5,11 @@ import { verifyWebhookSignature } from '$lib/server/stripe';
 /** Map Stripe plan metadata to workspace limits */
 function getPlanLimits(planKey: string): { maxUsers: number; maxStorageBytes: number } {
 	const plans: Record<string, { maxUsers: number; maxStorageBytes: number }> = {
-		single: { maxUsers: 1, maxStorageBytes: 500 * 1024 * 1024 * 1024 },          // 500GB
-		team5: { maxUsers: 5, maxStorageBytes: 2560 * 1024 * 1024 * 1024 },           // 2.5TB
-		team10: { maxUsers: 10, maxStorageBytes: 5120 * 1024 * 1024 * 1024 },          // 5TB
-		team25: { maxUsers: 25, maxStorageBytes: 12800 * 1024 * 1024 * 1024 }          // 12.5TB
+		free: { maxUsers: 1, maxStorageBytes: 500 * 1024 * 1024 },                    // 500MB
+		pro: { maxUsers: 1, maxStorageBytes: 5 * 1024 * 1024 * 1024 },                // 5GB
+		team: { maxUsers: 5, maxStorageBytes: 25 * 1024 * 1024 * 1024 }                // 25GB
 	};
-	return plans[planKey] || { maxUsers: 1, maxStorageBytes: 500 * 1024 * 1024 * 1024 };
+	return plans[planKey] || plans.free;
 }
 
 export const POST: RequestHandler = async ({ request, platform }) => {
@@ -54,7 +53,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 				const subscription = await subResponse.json();
 
 				const planKey = subscription.metadata?.plan_key ||
-					subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'single';
+					subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'pro';
 				const billingInterval = subscription.items?.data?.[0]?.price?.metadata?.billing || 'monthly';
 				const limits = getPlanLimits(planKey);
 
@@ -89,7 +88,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			const subscription = event.data.object;
 			const customerId = subscription.customer;
 			const planKey = subscription.metadata?.plan_key ||
-				subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'single';
+				subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'pro';
 			const billingInterval = subscription.items?.data?.[0]?.price?.metadata?.billing || 'monthly';
 			const limits = getPlanLimits(planKey);
 

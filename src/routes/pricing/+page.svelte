@@ -7,52 +7,126 @@
 
 	const plans = [
 		{
-			key: 'single',
-			name: 'Single User',
-			users: 1,
-			storage: '500 GB',
-			monthly: 49.99,
-			annualMonthly: 39.99,
-			popular: false
+			key: 'free',
+			name: 'Free',
+			monthly: 0,
+			annualMonthly: 0,
+			cta: 'Get started',
+			ctaHref: '/register',
+			popular: false,
+			description: 'Try CollectRelay with no commitment',
+			features: {
+				transactions: '3 active',
+				templates: 'Starter 4 only',
+				aiSummaries: '10/month',
+				eSignatures: true,
+				webhooks: false,
+				teamMembers: '1',
+				whiteLabel: false,
+				partnerAccess: false,
+				prioritySupport: false,
+				zapierApi: false
+			}
 		},
 		{
-			key: 'team5',
-			name: 'Team 5',
-			users: 5,
-			storage: '2.5 TB',
-			monthly: 239.99,
-			annualMonthly: 191.99,
-			popular: true
+			key: 'pro',
+			name: 'Pro',
+			monthly: 29,
+			annualMonthly: 24.17,
+			annualTotal: 290,
+			cta: 'Get started',
+			popular: false,
+			description: 'For solo professionals',
+			features: {
+				transactions: 'Unlimited',
+				templates: 'Unlimited custom',
+				aiSummaries: '100/month',
+				eSignatures: true,
+				webhooks: true,
+				teamMembers: '1',
+				whiteLabel: false,
+				partnerAccess: true,
+				prioritySupport: false,
+				zapierApi: true
+			}
 		},
 		{
-			key: 'team10',
-			name: 'Team 10',
-			users: 10,
-			storage: '5 TB',
-			monthly: 449.99,
-			annualMonthly: 359.99,
-			popular: false
+			key: 'team',
+			name: 'Team',
+			monthly: 79,
+			annualMonthly: 65.83,
+			annualTotal: 790,
+			cta: 'Get started',
+			popular: true,
+			description: 'For brokerages & teams',
+			features: {
+				transactions: 'Unlimited',
+				templates: 'Unlimited',
+				aiSummaries: '500/month',
+				eSignatures: true,
+				webhooks: true,
+				teamMembers: '5',
+				whiteLabel: true,
+				partnerAccess: true,
+				prioritySupport: true,
+				zapierApi: true
+			}
 		},
 		{
-			key: 'team25',
-			name: 'Team 25',
-			users: 25,
-			storage: '12.5 TB',
-			monthly: 999.99,
-			annualMonthly: 799.99,
-			popular: false
+			key: 'enterprise',
+			name: 'Enterprise',
+			monthly: -1,
+			annualMonthly: -1,
+			cta: 'Talk to sales',
+			ctaHref: 'mailto:info@collectrelay.com',
+			popular: false,
+			description: 'For large organizations',
+			features: {
+				transactions: 'Unlimited',
+				templates: 'Unlimited',
+				aiSummaries: 'Unlimited',
+				eSignatures: true,
+				webhooks: true,
+				teamMembers: 'Unlimited',
+				whiteLabel: true,
+				partnerAccess: true,
+				prioritySupport: true,
+				zapierApi: true
+			}
 		}
 	];
 
-	function price(plan: typeof plans[0]) {
-		return annual ? plan.annualMonthly : plan.monthly;
-	}
+	const featureRows = [
+		{ key: 'transactions', label: 'Transactions' },
+		{ key: 'templates', label: 'Templates' },
+		{ key: 'aiSummaries', label: 'AI summaries' },
+		{ key: 'eSignatures', label: 'E-signatures' },
+		{ key: 'webhooks', label: 'Webhooks' },
+		{ key: 'teamMembers', label: 'Team members' },
+		{ key: 'whiteLabel', label: 'White-label' },
+		{ key: 'partnerAccess', label: 'Partner access' },
+		{ key: 'prioritySupport', label: 'Priority support' },
+		{ key: 'zapierApi', label: 'Zapier/API' }
+	];
 
-	function formatPrice(n: number) {
-		return n.toFixed(2);
+	function displayPrice(plan: typeof plans[0]) {
+		if (plan.monthly === -1) return null;
+		if (plan.monthly === 0) return '0';
+		return annual ? plan.annualMonthly.toFixed(0) : plan.monthly.toString();
 	}
 
 	async function handleSubscribe(planKey: string) {
+		// Free tier → register
+		if (planKey === 'free') {
+			window.location.href = '/register';
+			return;
+		}
+		// Enterprise → sales
+		if (planKey === 'enterprise') {
+			window.location.href = 'mailto:info@collectrelay.com';
+			return;
+		}
+
 		loading = planKey;
 		try {
 			const res = await fetch('/api/stripe/checkout', {
@@ -68,7 +142,6 @@
 				const { url } = await res.json();
 				window.location.href = url;
 			} else if (res.status === 401) {
-				// Not logged in — redirect to register with plan info so checkout resumes after signup
 				const params = new URLSearchParams({ plan: planKey, billing: annual ? 'annual' : 'monthly' });
 				window.location.href = `/register?${params}`;
 			} else {
@@ -85,7 +158,7 @@
 
 <svelte:head>
 	<title>Pricing — CollectRelay</title>
-	<meta name="description" content="Simple, transparent pricing for document collection. Start with one user or scale with your team." />
+	<meta name="description" content="Start free, upgrade when you're ready. Simple pricing for document collection — Free, Pro $29/mo, Team $79/mo." />
 </svelte:head>
 
 <Navbar />
@@ -95,7 +168,7 @@
 	<section class="pricing-hero">
 		<div class="container">
 			<h1>Simple, transparent pricing</h1>
-			<p class="hero-subtitle">Start collecting documents in minutes. Scale as your team grows.</p>
+			<p class="hero-subtitle">Start free. Upgrade when you're ready. No surprises.</p>
 
 			<div class="billing-toggle">
 				<span class:active={!annual}>Monthly</span>
@@ -109,7 +182,7 @@
 				</button>
 				<span class:active={annual}>
 					Annual
-					<span class="save-badge">Save 20%</span>
+					<span class="save-badge">2 months free</span>
 				</span>
 			</div>
 		</div>
@@ -126,109 +199,87 @@
 						{/if}
 						<div class="plan-header">
 							<h3>{plan.name}</h3>
-							<p class="plan-detail">
-								{plan.users} {plan.users === 1 ? 'user' : 'users'} · {plan.storage} pooled storage
-							</p>
+							<p class="plan-description">{plan.description}</p>
 						</div>
 						<div class="plan-price">
-							<span class="dollar">$</span>
-							<span class="amount">{formatPrice(price(plan))}</span>
-							<span class="period">/mo</span>
-						</div>
-						{#if annual}
-							<p class="billing-note">Billed monthly · Annual commitment</p>
-						{:else}
-							<p class="billing-note">Billed monthly · No commitment</p>
-						{/if}
-						<button
-							class="plan-cta"
-							class:primary={plan.popular}
-							disabled={loading === plan.key}
-							onclick={() => handleSubscribe(plan.key)}
-						>
-							{loading === plan.key ? 'Redirecting...' : 'Get started'}
-						</button>
-						<ul class="plan-features">
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								{plan.users} {plan.users === 1 ? 'user seat' : 'user seats'}
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								{plan.storage} pooled storage
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								Unlimited transactions
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								Custom templates
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								Client portal & magic links
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								Email notifications
-							</li>
-							<li>
-								<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								Audit trail
-							</li>
-							{#if plan.users > 1}
-								<li>
-									<svg viewBox="0 0 24 24" width="16" height="16"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-									Team collaboration
-								</li>
+							{#if plan.monthly === -1}
+								<span class="custom-price">Custom</span>
+							{:else if plan.monthly === 0}
+								<span class="dollar">$</span>
+								<span class="amount">0</span>
+								<span class="period">/mo</span>
+							{:else}
+								<span class="dollar">$</span>
+								<span class="amount">{displayPrice(plan)}</span>
+								<span class="period">/mo</span>
 							{/if}
-						</ul>
+						</div>
+						{#if plan.monthly > 0}
+							{#if annual}
+								<p class="billing-note">${plan.annualTotal}/yr · 2 months free</p>
+							{:else}
+								<p class="billing-note">Billed monthly · No commitment</p>
+							{/if}
+						{:else if plan.monthly === 0}
+							<p class="billing-note">Free forever · No credit card</p>
+						{:else}
+							<p class="billing-note">Custom pricing for your team</p>
+						{/if}
+
+						{#if plan.ctaHref}
+							<a href={plan.ctaHref} class="plan-cta" class:primary={plan.popular}>
+								{plan.cta}
+							</a>
+						{:else}
+							<button
+								class="plan-cta"
+								class:primary={plan.popular}
+								disabled={loading === plan.key}
+								onclick={() => handleSubscribe(plan.key)}
+							>
+								{loading === plan.key ? 'Redirecting...' : plan.cta}
+							</button>
+						{/if}
 					</div>
 				{/each}
 			</div>
 		</div>
 	</section>
 
-	<!-- Add-ons -->
-	<section class="addons">
-		<div class="container-narrow">
-			<h2>Need more?</h2>
-			<p class="section-subtitle">Simple add-ons, no surprises.</p>
-
-			<div class="addons-grid">
-				<div class="addon-card">
-					<div class="addon-icon">
-						<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-							<polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-							<line x1="12" y1="22.08" x2="12" y2="12"/>
-						</svg>
-					</div>
-					<h3>Extra storage</h3>
-					<div class="addon-price">
-						<span class="amount">$15</span>
-						<span class="unit">/TB/mo</span>
-					</div>
-					<p>Add pooled storage in 1 TB increments to any plan.</p>
-				</div>
-
-				<div class="addon-card">
-					<div class="addon-icon">
-						<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-							<circle cx="9" cy="7" r="4"/>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-						</svg>
-					</div>
-					<h3>Extra user seats</h3>
-					<div class="addon-price">
-						<span class="amount">${annual ? '35.99' : '44.99'}</span>
-						<span class="unit">/user/mo</span>
-					</div>
-					<p>Add seats to any team plan. {annual ? 'Annual rate applied.' : 'Or $35.99/user/mo with annual commitment.'}</p>
-				</div>
+	<!-- Feature Comparison Table -->
+	<section class="comparison">
+		<div class="container">
+			<h2>Compare plans</h2>
+			<div class="table-wrapper">
+				<table>
+					<thead>
+						<tr>
+							<th class="feature-col"></th>
+							{#each plans as plan}
+								<th class="plan-col" class:highlight={plan.popular}>{plan.name}</th>
+							{/each}
+						</tr>
+					</thead>
+					<tbody>
+						{#each featureRows as row}
+							<tr>
+								<td class="feature-label">{row.label}</td>
+								{#each plans as plan}
+									{@const val = plan.features[row.key as keyof typeof plan.features]}
+									<td class="feature-value" class:highlight={plan.popular}>
+										{#if val === true}
+											<svg class="check" viewBox="0 0 24 24" width="18" height="18"><polyline points="20 6 9 17 4 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+										{:else if val === false}
+											<svg class="cross" viewBox="0 0 24 24" width="16" height="16"><line x1="18" y1="6" x2="6" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+										{:else}
+											<span class="feature-text">{val}</span>
+										{/if}
+									</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</section>
@@ -239,24 +290,28 @@
 			<h2>Frequently asked questions</h2>
 			<div class="faq-list">
 				<div class="faq-item">
-					<h3>What does "pooled storage" mean?</h3>
-					<p>Your storage quota is shared across your entire workspace — all users, transactions, and files draw from the same pool. No per-user limits to worry about.</p>
+					<h3>What's included in the free plan?</h3>
+					<p>The free plan includes 3 active transactions, the 4 starter templates, e-signatures, and 10 AI summaries per month. It's a full-featured way to try CollectRelay with real deals.</p>
 				</div>
 				<div class="faq-item">
 					<h3>Can I switch plans later?</h3>
 					<p>Absolutely. Upgrade or downgrade at any time. When upgrading, you'll be prorated for the remainder of your billing period.</p>
 				</div>
 				<div class="faq-item">
-					<h3>What happens if I exceed my storage?</h3>
-					<p>We'll notify you when you're approaching your limit. You can add extra storage at $15/TB/mo, or upgrade to a higher plan.</p>
+					<h3>What's the annual discount?</h3>
+					<p>Annual plans give you 2 months free — that's $290/yr for Pro (vs $348 monthly) and $790/yr for Team (vs $948 monthly). Cancel anytime during the first 30 days for a full refund.</p>
 				</div>
 				<div class="faq-item">
-					<h3>Is there a free trial?</h3>
-					<p>Yes — every plan comes with a 14-day free trial. No credit card required to start.</p>
+					<h3>What counts as an "active" transaction?</h3>
+					<p>An active transaction is one that hasn't been closed or archived. On the free plan, you can have 3 active at once — close one and start another, no limits on total.</p>
 				</div>
 				<div class="faq-item">
-					<h3>What's the annual commitment?</h3>
-					<p>Annual plans are still billed monthly — you just commit to 12 months and save 20%. Cancel anytime during the first 30 days for a full refund.</p>
+					<h3>What is white-label?</h3>
+					<p>Team and Enterprise plans let you replace CollectRelay branding with your own. Your clients see your logo, your colors, and your domain — not ours.</p>
+				</div>
+				<div class="faq-item">
+					<h3>What does Enterprise include?</h3>
+					<p>Enterprise adds unlimited team members, unlimited AI summaries, dedicated support, custom onboarding, SSO/SAML, and SLA guarantees. Contact us for a tailored quote.</p>
 				</div>
 			</div>
 		</div>
@@ -266,7 +321,7 @@
 	<section class="closing-cta">
 		<div class="container-narrow">
 			<h2>Ready to streamline your document collection?</h2>
-			<p>Start your 14-day free trial. No credit card required.</p>
+			<p>Start free — no credit card required. Upgrade when you're ready.</p>
 			<div class="cta-actions">
 				<a href="/register" class="btn-primary">Get started free</a>
 				<a href="mailto:info@collectrelay.com" class="btn-secondary">Talk to sales</a>
@@ -420,7 +475,7 @@
 		margin-bottom: var(--space-xs);
 	}
 
-	.plan-detail {
+	.plan-description {
 		font-size: var(--font-size-sm);
 		color: var(--text-secondary);
 	}
@@ -430,6 +485,7 @@
 		align-items: baseline;
 		gap: 2px;
 		margin-bottom: var(--space-xs);
+		min-height: 52px;
 	}
 
 	.plan-price .dollar {
@@ -454,10 +510,19 @@
 		margin-left: 2px;
 	}
 
+	.custom-price {
+		font-size: clamp(var(--font-size-xxl), 3vw, 36px);
+		font-weight: 800;
+		color: var(--text-primary);
+		letter-spacing: -0.02em;
+		line-height: 1;
+	}
+
 	.billing-note {
 		font-size: var(--font-size-xs);
 		color: var(--text-muted);
 		margin-bottom: var(--space-xl);
+		min-height: 1.2em;
 	}
 
 	.plan-cta {
@@ -469,8 +534,8 @@
 		font-size: var(--font-size-md);
 		font-weight: 600;
 		transition: all var(--transition-fast);
-		margin-bottom: var(--space-xl);
 		cursor: pointer;
+		text-decoration: none;
 
 		/* Default: outline style */
 		background: transparent;
@@ -502,109 +567,92 @@
 		color: var(--text-inverse);
 	}
 
-	.plan-features {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-md);
-	}
-
-	.plan-features li {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		font-size: var(--font-size-sm);
-		color: var(--text-secondary);
-	}
-
-	.plan-features li svg {
-		flex-shrink: 0;
-		color: var(--color-accent);
-	}
-
-	/* Add-ons */
-	.addons {
+	/* Comparison table */
+	.comparison {
 		padding: 0 0 var(--section-gap);
-		text-align: center;
 	}
 
-	.addons h2,
-	.faq h2 {
+	.comparison h2 {
 		font-size: clamp(var(--font-size-xxl), 3.5vw, var(--font-size-3xl));
 		font-weight: 700;
 		letter-spacing: -0.02em;
-		margin-bottom: var(--space-sm);
-		color: var(--text-primary);
-	}
-
-	.section-subtitle {
-		color: var(--text-secondary);
-		font-size: var(--font-size-lg);
+		text-align: center;
 		margin-bottom: var(--space-4xl);
-	}
-
-	.addons-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: var(--space-xl);
-		text-align: left;
-	}
-
-	.addon-card {
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-xl);
-		padding: var(--space-xxl);
-		transition: border-color var(--transition-normal);
-	}
-
-	.addon-card:hover {
-		border-color: var(--border-color-light);
-	}
-
-	.addon-icon {
-		width: 44px;
-		height: 44px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: var(--color-accent-bg);
-		border-radius: var(--radius-lg);
-		color: var(--color-accent);
-		margin-bottom: var(--space-lg);
-	}
-
-	.addon-card h3 {
-		font-size: var(--font-size-lg);
-		font-weight: 600;
-		color: var(--text-primary);
-		margin-bottom: var(--space-sm);
-	}
-
-	.addon-price {
-		display: flex;
-		align-items: baseline;
-		gap: 4px;
-		margin-bottom: var(--space-md);
-	}
-
-	.addon-price .amount {
-		font-size: var(--font-size-xxl);
-		font-weight: 800;
 		color: var(--text-primary);
 	}
 
-	.addon-price .unit {
-		font-size: var(--font-size-sm);
-		color: var(--text-muted);
+	.table-wrapper {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
-	.addon-card p {
+	table {
+		width: 100%;
+		border-collapse: collapse;
+		min-width: 640px;
+	}
+
+	thead th {
+		padding: var(--space-md) var(--space-lg);
 		font-size: var(--font-size-md);
+		font-weight: 700;
+		color: var(--text-primary);
+		text-align: center;
+		border-bottom: 2px solid var(--border-color);
+	}
+
+	thead th.feature-col {
+		text-align: left;
+		width: 180px;
+	}
+
+	thead th.highlight {
+		color: var(--color-accent);
+	}
+
+	tbody tr {
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	tbody tr:last-child {
+		border-bottom: none;
+	}
+
+	td {
+		padding: var(--space-md) var(--space-lg);
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	.feature-label {
+		text-align: left;
+		font-size: var(--font-size-sm);
+		font-weight: 500;
 		color: var(--text-secondary);
-		line-height: 1.6;
+	}
+
+	.feature-value {
+		font-size: var(--font-size-sm);
+	}
+
+	.feature-value.highlight {
+		background: rgba(16, 185, 129, 0.04);
+	}
+
+	.feature-text {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+	}
+
+	.check {
+		color: var(--color-accent);
+		display: inline-block;
+	}
+
+	.cross {
+		color: var(--text-muted);
+		opacity: 0.4;
+		display: inline-block;
 	}
 
 	/* FAQ */
@@ -613,8 +661,12 @@
 	}
 
 	.faq h2 {
+		font-size: clamp(var(--font-size-xxl), 3.5vw, var(--font-size-3xl));
+		font-weight: 700;
+		letter-spacing: -0.02em;
 		text-align: center;
 		margin-bottom: var(--space-4xl);
+		color: var(--text-primary);
 	}
 
 	.faq-list {
@@ -736,16 +788,21 @@
 			margin: 0 auto;
 		}
 
-		.addons-grid {
-			grid-template-columns: 1fr;
-		}
-
 		.cta-actions {
 			flex-direction: column;
 		}
 
 		.billing-toggle {
 			gap: var(--space-sm);
+		}
+
+		thead th, td {
+			padding: var(--space-sm) var(--space-md);
+			font-size: var(--font-size-xs);
+		}
+
+		.feature-label {
+			font-size: var(--font-size-xs);
 		}
 	}
 </style>

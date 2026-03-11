@@ -185,6 +185,10 @@
 
 	const planNames: Record<string, string> = {
 		free: 'Free',
+		pro: 'Pro',
+		team: 'Team',
+		enterprise: 'Enterprise',
+		// Legacy plan names
 		single: 'Single User',
 		team5: 'Team 5',
 		team10: 'Team 10',

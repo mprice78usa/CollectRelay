@@ -4,21 +4,13 @@ const STRIPE_API = 'https://api.stripe.com/v1';
 
 // Price IDs from Stripe (test mode)
 export const STRIPE_PRICES = {
-	single: {
-		monthly: 'price_1T7nHyAf5ZaWveKYK2JBtCqA',
-		annual: 'price_1T7nHyAf5ZaWveKYmrofteHJ'
+	pro: {
+		monthly: 'price_1T9u0YAf5ZaWveKYQeAM3pWc',
+		annual: 'price_1T9u0YAf5ZaWveKYN5Rd4M2a'
 	},
-	team5: {
-		monthly: 'price_1T7nHyAf5ZaWveKYFR4LpMot',
-		annual: 'price_1T7nHzAf5ZaWveKYvQMNrfAR'
-	},
-	team10: {
-		monthly: 'price_1T7nHzAf5ZaWveKYFR4qp9J4',
-		annual: 'price_1T7nHzAf5ZaWveKYgbaI2EAb'
-	},
-	team25: {
-		monthly: 'price_1T7nI0Af5ZaWveKYNNIqy8Rq',
-		annual: 'price_1T7nI0Af5ZaWveKYvEyAy5kB'
+	team: {
+		monthly: 'price_1T9u0ZAf5ZaWveKYmB5es9Vn',
+		annual: 'price_1T9u0ZAf5ZaWveKYFZGgN57B'
 	}
 } as const;
 
@@ -26,11 +18,10 @@ export type PlanKey = keyof typeof STRIPE_PRICES;
 export type BillingInterval = 'monthly' | 'annual';
 
 // Plan display info
-export const PLAN_INFO: Record<PlanKey, { name: string; users: number; storageLabel: string }> = {
-	single: { name: 'Single User', users: 1, storageLabel: '500GB' },
-	team5: { name: 'Team 5', users: 5, storageLabel: '2.5TB' },
-	team10: { name: 'Team 10', users: 10, storageLabel: '5TB' },
-	team25: { name: 'Team 25', users: 25, storageLabel: '12.5TB' }
+export const PLAN_INFO: Record<PlanKey | 'free', { name: string; users: number; storageLabel: string }> = {
+	free: { name: 'Free', users: 1, storageLabel: '500MB' },
+	pro: { name: 'Pro', users: 1, storageLabel: '5GB' },
+	team: { name: 'Team', users: 5, storageLabel: '25GB' }
 };
 
 /** Make a Stripe API request */
