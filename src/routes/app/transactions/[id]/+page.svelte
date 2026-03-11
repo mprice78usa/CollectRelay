@@ -486,7 +486,22 @@
 
 	<!-- Checklist items -->
 	<div class="checklist-section">
-		<h2>Checklist Items</h2>
+		<div class="checklist-header-row">
+			<h2>Checklist Items</h2>
+			{#if txn.items.some(i => i.status === 'submitted')}
+				<form method="POST" action="?/acceptAllSubmitted" use:enhance>
+					<button type="submit" class="btn-accept-all" onclick={(e) => {
+						const count = txn.items.filter(i => i.status === 'submitted').length;
+						if (!confirm(`Accept all ${count} submitted item(s)?`)) e.preventDefault();
+					}}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="20 6 9 17 4 12" />
+						</svg>
+						Accept All Submitted ({txn.items.filter(i => i.status === 'submitted').length})
+					</button>
+				</form>
+			{/if}
+		</div>
 
 		<div class="checklist-list">
 			{#each txn.items as item, i}
@@ -1216,6 +1231,38 @@
 	}
 
 	/* Checklist */
+	.checklist-header-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-md);
+		margin-bottom: var(--space-lg);
+	}
+
+	.checklist-header-row h2 {
+		margin-bottom: 0;
+	}
+
+	.btn-accept-all {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: 6px 14px;
+		background: var(--color-success);
+		color: #fff;
+		border: none;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: opacity var(--transition-fast);
+		white-space: nowrap;
+	}
+
+	.btn-accept-all:hover {
+		opacity: 0.85;
+	}
+
 	.checklist-section h2 {
 		font-size: var(--font-size-lg);
 		font-weight: 600;

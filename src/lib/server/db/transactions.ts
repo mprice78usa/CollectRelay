@@ -510,3 +510,48 @@ export async function deleteTransaction(
 
 	return true;
 }
+
+// --- Bulk Operations ---
+
+export async function getTransactionsByIds(
+	db: D1Database,
+	ids: string[],
+	workspaceId: string
+): Promise<DbTransaction[]> {
+	if (ids.length === 0) return [];
+	const placeholders = ids.map(() => '?').join(', ');
+	const result = await db
+		.prepare(`SELECT * FROM transactions WHERE id IN (${placeholders}) AND workspace_id = ?`)
+		.bind(...ids, workspaceId)
+		.all<DbTransaction>();
+	return result.results;
+}
+
+export async function bulkUpdateTransactionStatus(
+	db: D1Database,
+	ids: string[],
+	workspaceId: string,
+	newStatus: string
+): Promise<number> {
+	if (ids.length === 0) return 0;
+
+	const statements: D1PreparedStatement[] = [];
+	for (const id of ids) {
+		if (newStatus === 'completed') {
+			statements.push(
+				db.prepare(
+					"UPDATE transactions SET status = ?, completed_at = datetime('now'), updated_at = datetime('now') WHERE id = ? AND workspace_id = ?"
+				).bind(newStatus, id, workspaceId)
+			);
+		} else {
+			statements.push(
+				db.prepare(
+					"UPDATE transactions SET status = ?, updated_at = datetime('now') WHERE id = ? AND workspace_id = ?"
+				).bind(newStatus, id, workspaceId)
+			);
+		}
+	}
+
+	await db.batch(statements);
+	return ids.length;
+}

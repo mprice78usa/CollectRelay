@@ -17,6 +17,10 @@ declare global {
 				clientName: string;
 				token: string;
 			} | null;
+			apiKey: {
+				id: string;
+				workspaceId: string;
+			} | null;
 		}
 		interface Platform {
 			env: {
@@ -35,6 +39,8 @@ declare global {
 				TWILIO_AUTH_TOKEN: string;
 				TWILIO_PHONE_NUMBER: string;
 				AI: Ai;
+				VAPID_PUBLIC_KEY: string;
+				VAPID_PRIVATE_KEY: string;
 			};
 			context?: ExecutionContext;
 		}

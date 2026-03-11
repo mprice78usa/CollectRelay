@@ -5,27 +5,70 @@
 	import ActivityToast from '$components/ui/ActivityToast.svelte';
 	import FilePreview from '$components/ui/FilePreview.svelte';
 	import SignaturePad from '$components/ui/SignaturePad.svelte';
-	import { requestNotificationPermission, getNotificationPermission } from '$lib/activity-poller';
+	import { isPushSupported, registerServiceWorker, subscribeToPush, isPushSubscribed } from '$lib/push-subscription';
 
 	let notifPermission = $state<string>('default');
 	let notifDismissed = $state(false);
+	let swRegistration = $state<ServiceWorkerRegistration | null>(null);
+	let installPromptEvent = $state<any>(null);
+	let showInstallBanner = $state(false);
 
-	function initNotifState() {
-		if (typeof window !== 'undefined') {
-			notifPermission = getNotificationPermission();
-			notifDismissed = localStorage.getItem('cr-notif-dismissed') === '1';
+	async function initNotifState() {
+		if (typeof window === 'undefined') return;
+
+		notifDismissed = localStorage.getItem('cr-notif-dismissed') === '1';
+
+		// Register service worker
+		const reg = await registerServiceWorker();
+		swRegistration = reg;
+
+		if (reg && isPushSupported()) {
+			const subscribed = await isPushSubscribed(reg);
+			notifPermission = subscribed ? 'granted' : (typeof Notification !== 'undefined' ? Notification.permission : 'default');
+		} else if (typeof Notification !== 'undefined') {
+			notifPermission = Notification.permission;
 		}
+
+		// Listen for install prompt (PWA)
+		window.addEventListener('beforeinstallprompt', (e: any) => {
+			e.preventDefault();
+			installPromptEvent = e;
+			// Only show if not already dismissed
+			if (localStorage.getItem('cr-install-dismissed') !== '1') {
+				showInstallBanner = true;
+			}
+		});
 	}
 
 	async function enableNotifications() {
-		const result = await requestNotificationPermission();
-		notifPermission = result;
-		if (result !== 'default') notifDismissed = true;
+		if (swRegistration && isPushSupported()) {
+			const result = await subscribeToPush(swRegistration);
+			notifPermission = result;
+		} else if (typeof Notification !== 'undefined') {
+			const result = await Notification.requestPermission();
+			notifPermission = result;
+		}
+		if (notifPermission !== 'default') notifDismissed = true;
 	}
 
 	function dismissNotifPrompt() {
 		notifDismissed = true;
 		localStorage.setItem('cr-notif-dismissed', '1');
+	}
+
+	async function installApp() {
+		if (!installPromptEvent) return;
+		installPromptEvent.prompt();
+		const result = await installPromptEvent.userChoice;
+		if (result.outcome === 'accepted') {
+			showInstallBanner = false;
+		}
+		installPromptEvent = null;
+	}
+
+	function dismissInstallBanner() {
+		showInstallBanner = false;
+		localStorage.setItem('cr-install-dismissed', '1');
 	}
 
 	$effect(() => { initNotifState(); });
@@ -264,6 +307,21 @@
 					<button class="notif-enable" onclick={enableNotifications}>Enable notifications</button>
 				</div>
 				<button class="notif-dismiss" onclick={dismissNotifPrompt} aria-label="Dismiss">
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+			</div>
+		{/if}
+
+		{#if showInstallBanner}
+			<div class="install-prompt">
+				<div class="notif-prompt-content">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+					</svg>
+					<span>Add to home screen for easy access.</span>
+					<button class="notif-enable" onclick={installApp}>Install</button>
+				</div>
+				<button class="notif-dismiss" onclick={dismissInstallBanner} aria-label="Dismiss">
 					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 				</button>
 			</div>
@@ -1163,5 +1221,24 @@
 	.notif-dismiss:hover {
 		color: var(--text-primary);
 		background: rgba(0, 0, 0, 0.05);
+	}
+
+	/* Install PWA prompt — reuses notif-prompt styling */
+	.install-prompt {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: rgba(16, 185, 129, 0.08);
+		border: 1px solid rgba(16, 185, 129, 0.2);
+		border-radius: var(--radius-lg);
+		margin-bottom: var(--space-lg);
+		animation: fadeIn 0.3s ease;
+	}
+
+	.install-prompt svg {
+		color: var(--color-accent);
+		flex-shrink: 0;
 	}
 </style>

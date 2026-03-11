@@ -316,6 +316,19 @@ export const actions: Actions = {
 					reviewNote,
 					magicLinkUrl
 				});
+
+				// Push notification (fire-and-forget)
+				if (platform.env.VAPID_PUBLIC_KEY && platform.env.VAPID_PRIVATE_KEY) {
+					const { pushNotifyTransaction } = await import('$lib/server/push-notify');
+					const pushPromise = pushNotifyTransaction(db, params.id, {
+						title: 'Item Reviewed',
+						body: `${item?.name || 'An item'} was ${statusMap[action]}`,
+						url: magicLinkUrl || `/c/${params.id}`
+					}, platform.env.VAPID_PUBLIC_KEY, platform.env.VAPID_PRIVATE_KEY);
+					if (platform.context) {
+						platform.context.waitUntil(pushPromise);
+					}
+				}
 			}
 		} catch {
 			// Non-critical — don't fail the review
@@ -389,6 +402,19 @@ export const actions: Actions = {
 					comment: content,
 					ctaUrl
 				});
+
+				// Push notification (fire-and-forget)
+				if (platform.env.VAPID_PUBLIC_KEY && platform.env.VAPID_PRIVATE_KEY) {
+					const { pushNotifyTransaction } = await import('$lib/server/push-notify');
+					const pushPromise = pushNotifyTransaction(db, params.id, {
+						title: 'New Comment',
+						body: `${user.name} left a comment`,
+						url: ctaUrl || `/c/${params.id}`
+					}, platform.env.VAPID_PUBLIC_KEY, platform.env.VAPID_PRIVATE_KEY);
+					if (platform.context) {
+						platform.context.waitUntil(pushPromise);
+					}
+				}
 			}
 		} catch {
 			// Non-critical
@@ -640,6 +666,23 @@ export const actions: Actions = {
 			detail: `Manual reminder sent to ${transaction.client_email}`
 		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
+		// Push notification (fire-and-forget)
+		try {
+			if (platform?.env?.VAPID_PUBLIC_KEY && platform?.env?.VAPID_PRIVATE_KEY) {
+				const { pushNotifyTransaction } = await import('$lib/server/push-notify');
+				const pushPromise = pushNotifyTransaction(db, params.id, {
+					title: 'Reminder',
+					body: 'You have pending items to complete',
+					url: magicLinkUrl
+				}, platform.env.VAPID_PUBLIC_KEY, platform.env.VAPID_PRIVATE_KEY);
+				if (platform.context) {
+					platform.context.waitUntil(pushPromise);
+				}
+			}
+		} catch {
+			// Non-critical
+		}
+
 		return { success: true, nudgeSent: true };
 	},
 
@@ -813,5 +856,41 @@ export const actions: Actions = {
 		});
 
 		return { success: true };
+	},
+
+	acceptAllSubmitted: async ({ params, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+		if (!db || !user?.workspaceId) return fail(400, { error: 'Database not available' });
+
+		const transaction = await getTransactionById(db, params.id, user.workspaceId);
+		if (!transaction) return fail(404, { error: 'Transaction not found' });
+
+		const submittedItems = transaction.items.filter(i => i.status === 'submitted');
+		if (submittedItems.length === 0) return fail(400, { error: 'No submitted items to accept' });
+
+		// Batch update all submitted items to accepted
+		const statements = submittedItems.map(item =>
+			db.prepare(
+				"UPDATE checklist_items SET status = 'accepted', reviewed_by = ?, reviewed_at = datetime('now') WHERE id = ?"
+			).bind(user.id, item.id)
+		);
+		await db.batch(statements);
+
+		// Create audit events and record activity for each
+		for (const item of submittedItems) {
+			await createAuditEvent(db, {
+				transactionId: params.id,
+				checklistItemId: item.id,
+				actorType: 'pro',
+				actorId: user.id,
+				actorName: user.name,
+				action: 'item_accepted',
+				detail: `Bulk accepted: ${item.name}`
+			});
+			await recordItemActivity(db, item.id, params.id, 'item_reviewed', 'pro', user.name);
+		}
+
+		return { success: true, acceptedCount: submittedItems.length };
 	},
 };

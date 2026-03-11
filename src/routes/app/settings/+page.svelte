@@ -20,6 +20,55 @@
 	let brandName = $state(data.branding?.brand_name || '');
 	let desktopNotifPermission = $state<string>('default');
 
+	// API Keys
+	let apiKeys = $state(data.apiKeys || []);
+	let showCreateApiKey = $state(false);
+	let apiKeyName = $state('');
+	let creatingApiKey = $state(false);
+	let newApiKeyValue = $state<string | null>(null);
+	let copiedApiKey = $state(false);
+
+	async function createApiKey() {
+		if (!apiKeyName.trim()) return;
+		creatingApiKey = true;
+		try {
+			const res = await fetch('/api/api-keys', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: apiKeyName.trim() })
+			});
+			if (res.ok) {
+				const result = await res.json();
+				newApiKeyValue = result.key;
+				apiKeyName = '';
+				showCreateApiKey = false;
+				await refreshApiKeys();
+			}
+		} catch { /* ignore */ }
+		creatingApiKey = false;
+	}
+
+	async function refreshApiKeys() {
+		try {
+			const res = await fetch('/api/api-keys');
+			if (res.ok) apiKeys = await res.json();
+		} catch { /* ignore */ }
+	}
+
+	async function revokeApiKey(id: string) {
+		if (!confirm('Revoke this API key? Any integrations using it will stop working immediately.')) return;
+		await fetch(`/api/api-keys/${id}`, { method: 'DELETE' });
+		await refreshApiKeys();
+	}
+
+	function copyApiKey() {
+		if (newApiKeyValue) {
+			navigator.clipboard.writeText(newApiKeyValue);
+			copiedApiKey = true;
+			setTimeout(() => copiedApiKey = false, 2000);
+		}
+	}
+
 	// Webhooks
 	let webhooks = $state(data.webhooks || []);
 	let showAddWebhook = $state(false);
@@ -761,6 +810,92 @@
 						Add Webhook
 					</button>
 				{/if}
+			</div>
+		</Card>
+	</section>
+
+	<!-- API Keys Section -->
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="section-icon">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+				</svg>
+			</div>
+			<div>
+				<h2>API Keys</h2>
+				<p class="section-desc">Authenticate external integrations with the CollectRelay REST API.</p>
+			</div>
+		</div>
+
+		<Card>
+			{#if newApiKeyValue}
+				<div class="api-key-banner">
+					<div class="api-key-banner-header">
+						<strong>Your API key (shown once):</strong>
+						<p class="api-key-warning">Copy this key now. You won't be able to see it again.</p>
+					</div>
+					<div class="api-key-display">
+						<code class="api-key-value">{newApiKeyValue}</code>
+						<button class="btn-copy-secret" onclick={copyApiKey}>
+							{copiedApiKey ? 'Copied!' : 'Copy'}
+						</button>
+					</div>
+					<button class="btn-dismiss-key" onclick={() => newApiKeyValue = null}>
+						I've copied this key
+					</button>
+				</div>
+			{/if}
+
+			<div class="api-keys-list">
+				{#if apiKeys.length === 0 && !showCreateApiKey}
+					<p class="api-keys-empty">No API keys yet. Create one to integrate with external services.</p>
+				{/if}
+
+				{#each apiKeys as key}
+					<div class="api-key-item">
+						<div class="api-key-info">
+							<span class="api-key-name">{key.name}</span>
+							<code class="api-key-prefix">{key.keyPrefix}...</code>
+						</div>
+						<div class="api-key-meta">
+							<span class="api-key-date">Created {new Date(key.createdAt).toLocaleDateString()}</span>
+							{#if key.lastUsedAt}
+								<span class="api-key-date">Last used {new Date(key.lastUsedAt).toLocaleDateString()}</span>
+							{:else}
+								<span class="api-key-date api-key-never">Never used</span>
+							{/if}
+							<button class="btn-webhook-action btn-danger-text" onclick={() => revokeApiKey(key.id)}>Revoke</button>
+						</div>
+					</div>
+				{/each}
+
+				{#if showCreateApiKey}
+					<div class="api-key-form">
+						<div class="form-group">
+							<label for="ak-name">Key name</label>
+							<input type="text" id="ak-name" bind:value={apiKeyName} placeholder="e.g. Zapier Integration, CRM Sync" maxlength="100" />
+						</div>
+						<div class="form-footer">
+							<button class="btn-secondary-sm" onclick={() => showCreateApiKey = false}>Cancel</button>
+							<button class="btn-primary" onclick={createApiKey} disabled={creatingApiKey || !apiKeyName.trim()}>
+								{creatingApiKey ? 'Creating...' : 'Create API Key'}
+							</button>
+						</div>
+					</div>
+				{:else}
+					<button class="btn-add-webhook" onclick={() => showCreateApiKey = true}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+						</svg>
+						Create API Key
+					</button>
+				{/if}
+			</div>
+
+			<div class="api-docs-link">
+				<p>Base URL: <code>https://collectrelay.com/api/v1/</code></p>
+				<p>Auth header: <code>Authorization: Bearer cr_live_...</code></p>
 			</div>
 		</Card>
 	</section>
@@ -1662,6 +1797,143 @@
 		font-weight: 600;
 	}
 
+	/* API Keys */
+	.api-key-banner {
+		background: rgba(16, 185, 129, 0.08);
+		border: 1px solid rgba(16, 185, 129, 0.3);
+		border-radius: var(--radius-md);
+		padding: var(--space-lg);
+		margin-bottom: var(--space-lg);
+	}
+
+	.api-key-banner-header {
+		margin-bottom: var(--space-md);
+	}
+
+	.api-key-warning {
+		color: var(--color-warning);
+		font-size: var(--font-size-xs);
+		margin-top: 4px;
+	}
+
+	.api-key-display {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-md);
+	}
+
+	.api-key-value {
+		flex: 1;
+		font-size: var(--font-size-sm);
+		background: var(--bg-primary);
+		padding: var(--space-sm) var(--space-md);
+		border-radius: var(--radius-sm);
+		border: 1px solid var(--border-color);
+		word-break: break-all;
+	}
+
+	.btn-dismiss-key {
+		display: block;
+		padding: var(--space-sm) var(--space-md);
+		background: var(--color-accent);
+		color: var(--text-inverse);
+		border: none;
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.btn-dismiss-key:hover { opacity: 0.85; }
+
+	.api-keys-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.api-keys-empty {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		padding: var(--space-md) 0;
+	}
+
+	.api-key-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-md);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		gap: var(--space-md);
+	}
+
+	.api-key-info {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.api-key-name {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--text-primary);
+	}
+
+	.api-key-prefix {
+		font-size: var(--font-size-xs);
+		color: var(--text-secondary);
+		background: var(--bg-tertiary);
+		padding: 1px 6px;
+		border-radius: var(--radius-sm);
+	}
+
+	.api-key-meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		flex-shrink: 0;
+	}
+
+	.api-key-date {
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+		white-space: nowrap;
+	}
+
+	.api-key-never {
+		font-style: italic;
+	}
+
+	.api-key-form {
+		padding: var(--space-md);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+	}
+
+	.api-docs-link {
+		margin-top: var(--space-lg);
+		padding-top: var(--space-md);
+		border-top: 1px solid var(--border-color);
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+	}
+
+	.api-docs-link code {
+		background: var(--bg-tertiary);
+		padding: 1px 4px;
+		border-radius: var(--radius-sm);
+		font-size: 11px;
+	}
+
+	.api-docs-link p {
+		margin-bottom: var(--space-xs);
+	}
+
 	@media (max-width: 640px) {
 		.form-grid { grid-template-columns: 1fr; }
 		.workspace-meta { flex-direction: column; gap: var(--space-md); }
@@ -1669,5 +1941,7 @@
 		.webhook-actions { flex-wrap: wrap; }
 		.event-checkboxes { grid-template-columns: 1fr; }
 		.logo-upload-row { flex-direction: column; align-items: flex-start; }
+		.api-key-item { flex-direction: column; align-items: flex-start; }
+		.api-key-meta { flex-wrap: wrap; }
 	}
 </style>

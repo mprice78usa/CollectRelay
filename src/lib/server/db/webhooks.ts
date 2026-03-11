@@ -71,6 +71,7 @@ export async function createWebhook(
 		url: string;
 		events: string[];
 		description?: string;
+		source?: string;
 	}
 ): Promise<{ id: string; secret: string }> {
 	const id = generateId();
@@ -78,10 +79,10 @@ export async function createWebhook(
 
 	await db
 		.prepare(
-			`INSERT INTO webhooks (id, workspace_id, url, secret, events, description)
-			 VALUES (?, ?, ?, ?, ?, ?)`
+			`INSERT INTO webhooks (id, workspace_id, url, secret, events, description, source)
+			 VALUES (?, ?, ?, ?, ?, ?, ?)`
 		)
-		.bind(id, data.workspaceId, data.url, secret, JSON.stringify(data.events), data.description || null)
+		.bind(id, data.workspaceId, data.url, secret, JSON.stringify(data.events), data.description || null, data.source || null)
 		.run();
 
 	return { id, secret };

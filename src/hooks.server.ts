@@ -13,6 +13,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize locals
 	event.locals.user = null;
 	event.locals.clientSession = null;
+	event.locals.apiKey = null;
 
 	// Public marketing pages and auth pages
 	if (PUBLIC_PATHS.some((p) => path === p) || path.startsWith('/industries/') || path.startsWith(PARTNER_PATH_PREFIX)) {
@@ -69,6 +70,66 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// API health + Stripe webhook (no auth needed, Stripe signs these)
 	if (path === '/api/health' || path === '/api/stripe/webhook') {
 		return resolve(event);
+	}
+
+	// Public API v1 — API key authentication
+	if (path.startsWith('/api/v1/')) {
+		if (dev) {
+			// Dev mode: mock API key
+			event.locals.apiKey = { id: 'dev-api-key', workspaceId: 'dev-workspace' };
+			return addSecurityHeaders(await resolve(event), path);
+		}
+
+		const db = event.platform?.env?.DB;
+		const kv = event.platform?.env?.SESSIONS;
+		if (!db || !kv) {
+			return new Response(JSON.stringify({ error: { message: 'Service unavailable' } }), {
+				status: 503,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+
+		const authHeader = event.request.headers.get('Authorization');
+		if (!authHeader?.startsWith('Bearer cr_live_')) {
+			return new Response(JSON.stringify({ error: { message: 'Missing or invalid API key. Use Authorization: Bearer cr_live_...' } }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+
+		const apiKeyPlaintext = authHeader.slice(7); // Remove "Bearer "
+		const { hashApiKey, getWorkspaceByApiKeyHash, updateApiKeyLastUsed } = await import('$lib/server/db/api-keys');
+		const keyHash = await hashApiKey(apiKeyPlaintext);
+		const keyInfo = await getWorkspaceByApiKeyHash(db, keyHash);
+
+		if (!keyInfo) {
+			return new Response(JSON.stringify({ error: { message: 'Invalid or revoked API key' } }), {
+				status: 401,
+				headers: { 'Content-Type': 'application/json' }
+			});
+		}
+
+		// Rate limiting
+		const { checkApiRateLimit } = await import('$lib/server/rate-limit');
+		const rateCheck = await checkApiRateLimit(kv, keyInfo.id);
+		if (!rateCheck.allowed) {
+			return new Response(JSON.stringify({ error: { message: 'Rate limit exceeded', code: 'rate_limited' } }), {
+				status: 429,
+				headers: {
+					'Content-Type': 'application/json',
+					'Retry-After': String(rateCheck.retryAfterSeconds || 60)
+				}
+			});
+		}
+
+		event.locals.apiKey = { id: keyInfo.id, workspaceId: keyInfo.workspaceId };
+
+		// Update last_used_at in the background
+		if (event.platform?.context) {
+			event.platform.context.waitUntil(updateApiKeyLastUsed(db, keyInfo.id));
+		}
+
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// In dev mode, create a mock user for /app and /api routes (no KV available)
@@ -189,7 +250,8 @@ function addSecurityHeaders(response: Response, path: string): Response {
 			"style-src 'self' 'unsafe-inline'",
 			"img-src 'self' data: blob:",
 			"font-src 'self'",
-			"connect-src 'self' https://api.resend.com https://api.stripe.com https://api.twilio.com",
+			"worker-src 'self'",
+			"connect-src 'self' https://api.resend.com https://api.stripe.com https://api.twilio.com https://*.push.services.mozilla.com https://fcm.googleapis.com https://*.notify.windows.com",
 			isFileRoute ? "frame-ancestors 'self'" : "frame-ancestors 'none'",
 			"base-uri 'self'",
 			"form-action 'self' https://checkout.stripe.com"

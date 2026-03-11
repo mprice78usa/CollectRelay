@@ -24,6 +24,11 @@ const MAGIC_LINK_RATE_LIMIT: RateLimitConfig = {
 	windowSeconds: 300 // 5 minutes
 };
 
+const API_RATE_LIMIT: RateLimitConfig = {
+	maxAttempts: 100,
+	windowSeconds: 60 // 100 requests per minute
+};
+
 /**
  * Check and increment rate limit for a given action + IP.
  * Returns { allowed: true } or { allowed: false, retryAfterSeconds }.
@@ -59,6 +64,45 @@ export async function checkRateLimit(
 	}
 
 	// New window or expired — start fresh
+	const entry: RateLimitEntry = { attempts: 1, firstAttempt: now };
+	await kv.put(key, JSON.stringify(entry), {
+		expirationTtl: config.windowSeconds
+	});
+	return { allowed: true };
+}
+
+/**
+ * Check and increment rate limit for an API key.
+ * Returns { allowed: true } or { allowed: false, retryAfterSeconds }.
+ */
+export async function checkApiRateLimit(
+	kv: KVNamespace,
+	keyId: string
+): Promise<{ allowed: boolean; retryAfterSeconds?: number }> {
+	const config = API_RATE_LIMIT;
+	const key = `ratelimit:api:${keyId}`;
+
+	const raw = await kv.get(key);
+	const now = Date.now();
+
+	if (raw) {
+		const entry: RateLimitEntry = JSON.parse(raw);
+		const elapsed = (now - entry.firstAttempt) / 1000;
+
+		if (elapsed < config.windowSeconds) {
+			if (entry.attempts >= config.maxAttempts) {
+				const retryAfterSeconds = Math.ceil(config.windowSeconds - elapsed);
+				return { allowed: false, retryAfterSeconds };
+			}
+
+			entry.attempts += 1;
+			await kv.put(key, JSON.stringify(entry), {
+				expirationTtl: config.windowSeconds
+			});
+			return { allowed: true };
+		}
+	}
+
 	const entry: RateLimitEntry = { attempts: 1, firstAttempt: now };
 	await kv.put(key, JSON.stringify(entry), {
 		expirationTtl: config.windowSeconds
