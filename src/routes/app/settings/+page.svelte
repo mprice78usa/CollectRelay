@@ -10,6 +10,8 @@
 	let profileSaved = $state(false);
 	let workspaceSaved = $state(false);
 	let loadingPortal = $state(false);
+	let savingNotifs = $state(false);
+	let notifsSaved = $state(false);
 	let desktopNotifPermission = $state<string>('default');
 
 	$effect(() => {
@@ -317,13 +319,26 @@
 						</button>
 					{/if}
 				</div>
+				<form
+				method="POST"
+				action="?/updateNotificationPrefs"
+				use:enhance={() => {
+					savingNotifs = true;
+					return async ({ update }) => {
+						savingNotifs = false;
+						showSavedBriefly((v) => (notifsSaved = v));
+						await update();
+					};
+				}}
+				class="notification-form"
+			>
 				<div class="notification-row">
 					<div class="notification-info">
 						<span class="notification-label">Email — Client submissions</span>
 						<span class="notification-desc">Get emailed when a client uploads a document or answers a question.</span>
 					</div>
 					<label class="toggle">
-						<input type="checkbox" checked disabled />
+						<input type="checkbox" name="notifySubmissions" checked={data.notificationPrefs.notifySubmissions === 1} />
 						<span class="toggle-slider"></span>
 					</label>
 				</div>
@@ -333,22 +348,35 @@
 						<span class="notification-desc">Reminder when submitted items are waiting for your review.</span>
 					</div>
 					<label class="toggle">
-						<input type="checkbox" checked disabled />
+						<input type="checkbox" name="notifyReviewReminders" checked={data.notificationPrefs.notifyReviewReminders === 1} />
 						<span class="toggle-slider"></span>
 					</label>
 				</div>
-				<div class="notification-row">
+				<div class="notification-row notification-row-last">
 					<div class="notification-info">
 						<span class="notification-label">Email — Transaction completed</span>
 						<span class="notification-desc">Get emailed when all items in a transaction are complete.</span>
 					</div>
 					<label class="toggle">
-						<input type="checkbox" checked disabled />
+						<input type="checkbox" name="notifyCompleted" checked={data.notificationPrefs.notifyCompleted === 1} />
 						<span class="toggle-slider"></span>
 					</label>
 				</div>
+				<div class="form-footer">
+					{#if notifsSaved}
+						<span class="saved-indicator">
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+								<polyline points="20 6 9 17 4 12" />
+							</svg>
+							Saved
+						</span>
+					{/if}
+					<button type="submit" class="btn-primary" disabled={savingNotifs}>
+						{savingNotifs ? 'Saving...' : 'Save Preferences'}
+					</button>
+				</div>
+			</form>
 			</div>
-			<p class="coming-soon">Email notification preferences coming soon.</p>
 		</Card>
 	</section>
 </div>
@@ -616,12 +644,17 @@
 		cursor: not-allowed;
 	}
 
-	.coming-soon {
-		font-size: var(--font-size-xs);
-		color: var(--text-muted);
-		text-align: center;
+	.notification-form {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.notification-row-last {
+		border-bottom: none;
+	}
+
+	.notification-form .form-footer {
 		padding-top: var(--space-md);
-		font-style: italic;
 	}
 
 	.notif-status {

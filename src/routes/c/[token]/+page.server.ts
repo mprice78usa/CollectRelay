@@ -11,6 +11,7 @@ import { getCommentsForTransaction, addComment } from '$lib/server/db/comments';
 import type { DbComment } from '$lib/server/db/comments';
 import { sanitizeTextInput } from '$lib/server/sanitize';
 import { sendSubmissionNotification, sendCommentNotification } from '$lib/server/email';
+import { getNotificationPrefs } from '$lib/server/db/users';
 
 export const load: PageServerLoad = async ({ locals, platform }) => {
 	const session = locals.clientSession;
@@ -26,36 +27,43 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				description: 'Drivers license or passport', item_type: 'document', required: 1,
 				sort_order: 0, status: 'accepted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
 			},
 			{
 				id: 'mock-ci-2', transaction_id: session.transactionId, name: 'Proof of income',
 				description: 'Recent pay stubs or tax return', item_type: 'document', required: 1,
 				sort_order: 1, status: 'rejected', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: 'Please upload a more recent pay stub (last 30 days).'
+				reviewed_by: null, reviewed_at: null, review_note: 'Please upload a more recent pay stub (last 30 days).', signature_data: null
 			},
 			{
 				id: 'mock-ci-3', transaction_id: session.transactionId, name: 'Confirm mailing address',
 				description: 'Your current mailing address', item_type: 'question', required: 1,
 				sort_order: 2, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
-			},
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
+},
 			{
 				id: 'mock-ci-4', transaction_id: session.transactionId, name: 'Pre-approval letter',
 				description: 'From your lender', item_type: 'document', required: 1,
 				sort_order: 3, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
-			},
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
+},
 			{
 				id: 'mock-ci-5', transaction_id: session.transactionId, name: 'Agree to disclosure terms',
 				description: 'Acknowledge receipt of disclosure documents', item_type: 'checkbox', required: 1,
 				sort_order: 4, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
-			}
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
+},
+			{
+				id: 'mock-ci-6', transaction_id: session.transactionId, name: 'Buyer signature',
+				description: 'Sign to acknowledge the purchase agreement', item_type: 'signature', required: 1,
+				sort_order: 5, status: 'pending', allowed_file_types: null, max_file_size: null,
+				example_text: null, due_date: null, answer: null,
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
+}
 		];
 
 		const mockTransaction: TransactionWithItems = {
@@ -151,16 +159,19 @@ export const actions: Actions = {
 					.bind(itemId)
 					.first<{ name: string }>();
 				if (txnInfo && item) {
-					const appUrl = platform.env.APP_URL || url.origin;
-					await sendSubmissionNotification(platform.env, {
-						proEmail: txnInfo.creatorEmail,
-						proName: txnInfo.creatorName,
-						clientName: locals.clientSession.clientName,
-						transactionTitle: txnInfo.transactionTitle,
-						itemName: item.name,
-						appUrl,
-						transactionId: locals.clientSession.transactionId
-					});
+					const prefs = await getNotificationPrefs(db, txnInfo.creatorId);
+					if (!prefs || prefs.notify_submissions) {
+						const appUrl = platform.env.APP_URL || url.origin;
+						await sendSubmissionNotification(platform.env, {
+							proEmail: txnInfo.creatorEmail,
+							proName: txnInfo.creatorName,
+							clientName: locals.clientSession.clientName,
+							transactionTitle: txnInfo.transactionTitle,
+							itemName: item.name,
+							appUrl,
+							transactionId: locals.clientSession.transactionId
+						});
+					}
 				}
 			} catch (err) {
 				console.error('Failed to send submission notification:', err);
@@ -195,11 +206,13 @@ export const actions: Actions = {
 			await recordItemActivity(db, checklistItemId, session.transactionId, 'comment_added', 'client', session.clientName);
 		}
 
-		// Notify pro when client adds a comment (non-blocking)
+		// Notify pro when client adds a comment (non-blocking, respects notification prefs)
 		if (platform?.env) {
 			try {
 				const txnInfo = await getTransactionWithCreatorEmail(db, session.transactionId);
 				if (txnInfo) {
+					const prefs = await getNotificationPrefs(db, txnInfo.creatorId);
+					if (!prefs || prefs.notify_submissions) {
 					let itemName: string | undefined;
 					if (checklistItemId) {
 						const item = await db
@@ -218,6 +231,7 @@ export const actions: Actions = {
 						comment: content,
 						ctaUrl: `${appUrl}/app/transactions/${session.transactionId}`
 					});
+					}
 				}
 			} catch (err) {
 				console.error('Failed to send comment notification:', err);

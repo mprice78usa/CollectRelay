@@ -16,21 +16,24 @@ export const load: PageServerLoad = async ({ parent, platform }) => {
 				description: 'Drivers license or passport', item_type: 'document', required: 1,
 				sort_order: 0, status: 'accepted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: 'dev-user', reviewed_at: '2026-03-02', review_note: null
+				reviewed_by: 'dev-user', reviewed_at: '2026-03-02', review_note: null,
+				signature_data: null
 			},
 			{
 				id: 'ci-2', transaction_id: 'mock-txn-1', name: 'Proof of income',
 				description: null, item_type: 'document', required: 1,
 				sort_order: 1, status: 'submitted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null,
+				signature_data: null
 			},
 			{
 				id: 'ci-3', transaction_id: 'mock-txn-1', name: 'Pre-approval letter',
 				description: null, item_type: 'document', required: 1,
 				sort_order: 2, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null,
+				signature_data: null
 			}
 		];
 

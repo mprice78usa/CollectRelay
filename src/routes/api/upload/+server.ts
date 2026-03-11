@@ -7,6 +7,7 @@ import { generateId } from '$lib/server/auth';
 import { sanitizeFilename } from '$lib/server/sanitize';
 import { getTransactionWithCreatorEmail } from '$lib/server/db/transactions';
 import { sendSubmissionNotification } from '$lib/server/email';
+import { getNotificationPrefs } from '$lib/server/db/users';
 import { convertImageToPdf, isConvertibleImage } from '$lib/server/pdf-convert';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -139,8 +140,11 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 				.first<{ name: string }>();
 			// Skip self-notification (pro testing as client in same browser)
 			if (txnInfo && item && txnInfo.creatorEmail !== locals.clientSession!.clientEmail) {
-				const appUrl = platform.env.APP_URL || new URL(request.url).origin;
-				await sendSubmissionNotification(platform.env, {
+				// Check pro's notification preferences
+				const prefs = await getNotificationPrefs(db, txnInfo.creatorId);
+				if (!prefs || prefs.notify_submissions) {
+					const appUrl = platform.env.APP_URL || new URL(request.url).origin;
+					await sendSubmissionNotification(platform.env, {
 					proEmail: txnInfo.creatorEmail,
 					proName: txnInfo.creatorName,
 					clientName: locals.clientSession!.clientName,
@@ -148,7 +152,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 					itemName: item.name,
 					appUrl,
 					transactionId
-				});
+					});
+				}
 			}
 		} catch (err) {
 			console.error('Failed to send submission notification:', err);

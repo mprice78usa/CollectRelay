@@ -4,6 +4,7 @@
 	import Badge from '$components/ui/Badge.svelte';
 	import ActivityToast from '$components/ui/ActivityToast.svelte';
 	import FilePreview from '$components/ui/FilePreview.svelte';
+	import SignaturePad from '$components/ui/SignaturePad.svelte';
 	import { requestNotificationPermission, getNotificationPermission } from '$lib/activity-poller';
 
 	let notifPermission = $state<string>('default');
@@ -185,6 +186,40 @@
 	function onDrop(e: DragEvent, itemId: string) {
 		e.preventDefault();
 		handleFileUpload(itemId, e.dataTransfer?.files || null);
+	}
+
+	let signingItems = $state<Set<string>>(new Set());
+
+	async function handleSignature(itemId: string, sigData: { blob: Blob; mode: 'draw' | 'type'; typedName?: string }) {
+		if (!txn) return;
+
+		const next = new Set(signingItems);
+		next.add(itemId);
+		signingItems = next;
+
+		try {
+			const formData = new FormData();
+			formData.append('signature', sigData.blob, 'signature.png');
+			formData.append('itemId', itemId);
+			formData.append('mode', sigData.mode);
+			if (sigData.typedName) formData.append('typedName', sigData.typedName);
+			formData.append('consent', 'true');
+
+			const response = await fetch('/api/signature', { method: 'POST', body: formData });
+
+			if (!response.ok) {
+				const errData = await response.json().catch(() => ({ message: 'Signature submission failed' }));
+				alert(errData.message || 'Signature submission failed. Please try again.');
+			}
+
+			await invalidateAll();
+		} catch (err) {
+			alert('Network error. Please try again.');
+		} finally {
+			const done = new Set(signingItems);
+			done.delete(itemId);
+			signingItems = done;
+		}
 	}
 
 	function onDragOver(e: DragEvent) {
@@ -435,9 +470,34 @@
 								{/if}
 							{/if}
 
-							<!-- Signature items: coming soon -->
+							<!-- Signature items -->
 							{#if item.item_type === 'signature'}
-								<div class="coming-soon">E-signature coming soon</div>
+								{#if item.status === 'accepted' || item.status === 'waived'}
+									<div class="signature-status done">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+											<polyline points="20 6 9 17 4 12" />
+										</svg>
+										Signature {item.status === 'accepted' ? 'accepted' : 'waived'}
+									</div>
+								{:else if item.status === 'submitted'}
+									<div class="signature-status pending">
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" />
+										</svg>
+										Signature submitted — under review
+									</div>
+									{@const sigFiles = filesForItem(item.id)}
+									{#if sigFiles.length > 0}
+										<div class="signature-preview-img">
+											<img src="/api/files/{sigFiles[0].id}" alt="Your signature" />
+										</div>
+									{/if}
+								{:else if needsAction}
+									<SignaturePad
+										onSignature={(sigData) => handleSignature(item.id, sigData)}
+										disabled={signingItems.has(item.id)}
+									/>
+								{/if}
 							{/if}
 
 							<!-- Comments -->
@@ -905,13 +965,40 @@
 		font-size: var(--font-size-sm);
 	}
 
-	.coming-soon {
-		padding: var(--space-md);
-		text-align: center;
-		color: var(--text-tertiary);
+	/* Signature states */
+	.signature-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
 		font-size: var(--font-size-sm);
-		border: 1px dashed var(--border-color);
+		font-weight: 500;
+		padding: var(--space-xs) var(--space-md);
 		border-radius: var(--radius-md);
+	}
+
+	.signature-status.done {
+		color: var(--color-success);
+		background: rgba(16, 185, 129, 0.1);
+	}
+
+	.signature-status.pending {
+		color: var(--color-info, #3b82f6);
+		background: rgba(59, 130, 246, 0.1);
+	}
+
+	.signature-preview-img {
+		margin-top: var(--space-sm);
+		padding: var(--space-md);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		text-align: center;
+	}
+
+	.signature-preview-img img {
+		max-width: 300px;
+		max-height: 150px;
+		object-fit: contain;
 	}
 
 	/* Comments */

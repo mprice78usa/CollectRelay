@@ -1,4 +1,4 @@
-import { getUserById, getWorkspaceForUser, updateUser, updateWorkspace, getBillingInfo } from '$lib/server/db/users';
+import { getUserById, getWorkspaceForUser, updateUser, updateWorkspace, getBillingInfo, updateNotificationPrefs } from '$lib/server/db/users';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -31,6 +31,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				isTrialExpired: false,
 				trialDaysLeft: 10,
 				hasActiveSubscription: false
+			},
+			notificationPrefs: {
+				notifySubmissions: 1,
+				notifyReviewReminders: 1,
+				notifyCompleted: 1
 			}
 		};
 	}
@@ -50,7 +55,12 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			phone: dbUser?.phone ?? null
 		},
 		workspace: workspace ?? { id: user.workspaceId, name: 'My Workspace', role: 'owner' },
-		billing
+		billing,
+		notificationPrefs: {
+			notifySubmissions: dbUser?.notify_submissions ?? 1,
+			notifyReviewReminders: dbUser?.notify_review_reminders ?? 1,
+			notifyCompleted: dbUser?.notify_completed ?? 1
+		}
 	};
 };
 
@@ -85,5 +95,24 @@ export const actions: Actions = {
 		await updateWorkspace(db, user.workspaceId, { name });
 
 		return { success: true, section: 'workspace' };
+	},
+
+	updateNotificationPrefs: async ({ request, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+		if (!db || !user) return fail(401, { error: 'Unauthorized' });
+
+		const data = await request.formData();
+		const notifySubmissions = data.has('notifySubmissions') ? 1 : 0;
+		const notifyReviewReminders = data.has('notifyReviewReminders') ? 1 : 0;
+		const notifyCompleted = data.has('notifyCompleted') ? 1 : 0;
+
+		await updateNotificationPrefs(db, user.id, {
+			notifySubmissions,
+			notifyReviewReminders,
+			notifyCompleted
+		});
+
+		return { success: true, section: 'notifications' };
 	}
 };

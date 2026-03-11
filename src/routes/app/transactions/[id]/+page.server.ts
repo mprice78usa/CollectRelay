@@ -28,35 +28,35 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 				description: 'Drivers license or passport', item_type: 'document', required: 1,
 				sort_order: 0, status: 'accepted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: 'dev-user', reviewed_at: '2026-03-02', review_note: null
+				reviewed_by: 'dev-user', reviewed_at: '2026-03-02', review_note: null, signature_data: null
 			},
 			{
 				id: 'mock-ci-2', transaction_id: params.id, name: 'Proof of income',
 				description: 'Recent pay stubs or tax return', item_type: 'document', required: 1,
 				sort_order: 1, status: 'submitted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
 			},
 			{
 				id: 'mock-ci-3', transaction_id: params.id, name: 'Confirm mailing address',
 				description: 'Your current mailing address', item_type: 'question', required: 1,
 				sort_order: 2, status: 'submitted', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: '123 Main St, Suite 4, New York, NY 10001',
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
 			},
 			{
 				id: 'mock-ci-4', transaction_id: params.id, name: 'Pre-approval letter',
 				description: 'From your lender', item_type: 'document', required: 1,
 				sort_order: 3, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
 			},
 			{
 				id: 'mock-ci-5', transaction_id: params.id, name: 'Agree to terms',
 				description: 'Acknowledge receipt of disclosure', item_type: 'checkbox', required: 1,
 				sort_order: 4, status: 'pending', allowed_file_types: null, max_file_size: null,
 				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null
+				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
 			}
 		];
 

@@ -53,6 +53,7 @@ export interface DbChecklistItem {
 	reviewed_by: string | null;
 	reviewed_at: string | null;
 	review_note: string | null;
+	signature_data: string | null;
 }
 
 export interface TransactionWithItems extends DbTransaction {
@@ -349,6 +350,7 @@ export async function updateChecklistItemAnswer(
 export interface TransactionCreatorInfo {
 	transactionId: string;
 	transactionTitle: string;
+	creatorId: string;
 	creatorEmail: string;
 	creatorName: string;
 }
@@ -467,7 +469,7 @@ export async function getTransactionWithCreatorEmail(
 ): Promise<TransactionCreatorInfo | null> {
 	const result = await db
 		.prepare(
-			`SELECT t.id as transactionId, t.title as transactionTitle, u.email as creatorEmail, u.name as creatorName
+			`SELECT t.id as transactionId, t.title as transactionTitle, t.created_by as creatorId, u.email as creatorEmail, u.name as creatorName
 			 FROM transactions t
 			 JOIN users u ON t.created_by = u.id
 			 WHERE t.id = ?`

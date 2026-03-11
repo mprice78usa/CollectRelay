@@ -10,6 +10,9 @@ export interface DbUser {
 	company: string | null;
 	phone: string | null;
 	avatar_url: string | null;
+	notify_submissions: number;
+	notify_review_reminders: number;
+	notify_completed: number;
 	created_at: string;
 	updated_at: string;
 }
@@ -121,6 +124,31 @@ export async function updateUser(
 		.prepare(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`)
 		.bind(...values)
 		.run();
+}
+
+// --- Notification Preferences ---
+
+export async function updateNotificationPrefs(
+	db: D1Database,
+	userId: string,
+	prefs: { notifySubmissions: number; notifyReviewReminders: number; notifyCompleted: number }
+): Promise<void> {
+	await db
+		.prepare(
+			`UPDATE users SET notify_submissions = ?, notify_review_reminders = ?, notify_completed = ?, updated_at = datetime('now') WHERE id = ?`
+		)
+		.bind(prefs.notifySubmissions, prefs.notifyReviewReminders, prefs.notifyCompleted, userId)
+		.run();
+}
+
+export async function getNotificationPrefs(
+	db: D1Database,
+	userId: string
+): Promise<{ notify_submissions: number; notify_review_reminders: number; notify_completed: number } | null> {
+	return db
+		.prepare('SELECT notify_submissions, notify_review_reminders, notify_completed FROM users WHERE id = ?')
+		.bind(userId)
+		.first();
 }
 
 // --- Billing / Trial helpers ---

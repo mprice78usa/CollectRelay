@@ -559,6 +559,35 @@
 						{/if}
 					{/if}
 
+					<!-- Show signature for signature items -->
+					{#if item.item_type === 'signature'}
+						{@const sigFiles = filesForItem(item.id)}
+						{#if sigFiles.length > 0}
+							<div class="signature-display">
+								<span class="answer-label">Signature:</span>
+								<div class="signature-img-wrapper">
+									<img src="/api/files/{sigFiles[0].id}" alt="Client signature" class="signature-img-review" />
+								</div>
+								{#if item.signature_data}
+									{@const sigMeta = JSON.parse(item.signature_data)}
+									<div class="signature-meta">
+										<span>Signed by: {sigMeta.signerName} ({sigMeta.signerEmail})</span>
+										<span>Method: {sigMeta.mode === 'draw' ? 'Hand-drawn' : 'Typed'}</span>
+										<span>Date: {new Date(sigMeta.signedAt).toLocaleString()}</span>
+										<span>IP: {sigMeta.ipAddress}</span>
+									</div>
+								{/if}
+							</div>
+						{:else if item.status === 'pending'}
+							<div class="signature-awaiting">
+								<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+									<path d="M2 17l4-4 4 4 4-4 4 4 4-4" /><path d="M2 21h20" />
+								</svg>
+								Awaiting signature from client
+							</div>
+						{/if}
+					{/if}
+
 					<!-- Review note for rejected items -->
 					{#if item.review_note}
 						<div class="review-note">
@@ -1345,6 +1374,48 @@
 
 	.note-label {
 		font-weight: 600;
+	}
+
+	/* Signature display */
+	.signature-display {
+		margin-top: var(--space-sm);
+		margin-left: 40px;
+	}
+
+	.signature-img-wrapper {
+		margin-top: var(--space-xs);
+		padding: var(--space-md);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		display: inline-block;
+	}
+
+	.signature-img-review {
+		max-width: 300px;
+		max-height: 150px;
+		display: block;
+		object-fit: contain;
+	}
+
+	.signature-meta {
+		margin-top: var(--space-sm);
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+
+	.signature-awaiting {
+		margin-top: var(--space-sm);
+		margin-left: 40px;
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-style: italic;
 	}
 
 	/* Review actions */
