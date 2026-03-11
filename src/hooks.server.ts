@@ -3,7 +3,7 @@ import { redirect, type Handle } from '@sveltejs/kit';
 import { validateSession } from '$lib/server/auth';
 import { getUserById, getWorkspaceForUser, isOnboardingComplete } from '$lib/server/db/users';
 
-const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health', '/pricing', '/checkout/success', '/checkout/cancel'];
+const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health', '/pricing', '/features', '/checkout/success', '/checkout/cancel'];
 const CLIENT_PATH_PREFIX = '/c/';
 const PARTNER_PATH_PREFIX = '/p/';
 

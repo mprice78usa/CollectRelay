@@ -17,7 +17,7 @@
 			<div class="footer-links">
 				<div class="footer-col">
 					<h4>Product</h4>
-					<a href="#features">Features</a>
+					<a href="/features">Features</a>
 					<a href="#how-it-works">How it works</a>
 					<a href="/pricing">Pricing</a>
 					<a href="/security">Security</a>

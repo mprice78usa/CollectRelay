@@ -52,7 +52,7 @@
 
 		<div class="nav-links" class:open={mobileOpen}>
 			<a href="/#how-it-works" onclick={sectionLink('how-it-works')}>How it works</a>
-			<a href="/#features" onclick={sectionLink('features')}>Features</a>
+			<a href="/features" onclick={() => mobileOpen = false}>Features</a>
 
 			<!-- Industries dropdown -->
 			<div class="dropdown">
