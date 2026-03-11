@@ -1,7 +1,7 @@
 import { dev } from '$app/environment';
 import { redirect, type Handle } from '@sveltejs/kit';
 import { validateSession } from '$lib/server/auth';
-import { getUserById, getWorkspaceForUser } from '$lib/server/db/users';
+import { getUserById, getWorkspaceForUser, isOnboardingComplete } from '$lib/server/db/users';
 
 const PUBLIC_PATHS = ['/', '/login', '/register', '/api/health', '/pricing', '/checkout/success', '/checkout/cancel'];
 const CLIENT_PATH_PREFIX = '/c/';
@@ -149,6 +149,17 @@ export const handle: Handle = async ({ event, resolve }) => {
 			name: user.name,
 			workspaceId: workspace?.id || ''
 		};
+
+		// Onboarding redirect — new users must complete onboarding first
+		if (workspace?.id && event.platform.env.DB) {
+			const onboarded = await isOnboardingComplete(event.platform.env.DB, workspace.id);
+			if (!onboarded && !path.startsWith('/app/onboarding')) {
+				throw redirect(303, '/app/onboarding');
+			}
+			if (onboarded && path === '/app/onboarding') {
+				throw redirect(303, '/app');
+			}
+		}
 
 		return addSecurityHeaders(await resolve(event), path);
 	}

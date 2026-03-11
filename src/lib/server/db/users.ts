@@ -44,7 +44,7 @@ export async function createUser(
 			)
 			.bind(userId, data.email.toLowerCase(), data.name, data.passwordHash, data.passwordSalt, data.company || null),
 		db
-			.prepare('INSERT INTO workspaces (id, name, owner_id, trial_ends_at) VALUES (?, ?, ?, ?)')
+			.prepare('INSERT INTO workspaces (id, name, owner_id, trial_ends_at, onboarding_completed) VALUES (?, ?, ?, ?, 0)')
 			.bind(workspaceId, `${data.name}'s Workspace`, userId, trialEndsAt),
 		db
 			.prepare('INSERT INTO workspace_members (workspace_id, user_id, role) VALUES (?, ?, ?)')
@@ -203,4 +203,21 @@ export async function getBillingInfo(db: D1Database, workspaceId: string): Promi
 		trialDaysLeft,
 		hasActiveSubscription
 	};
+}
+
+// --- Onboarding ---
+
+export async function isOnboardingComplete(db: D1Database, workspaceId: string): Promise<boolean> {
+	const row = await db
+		.prepare('SELECT onboarding_completed FROM workspaces WHERE id = ?')
+		.bind(workspaceId)
+		.first<{ onboarding_completed: number }>();
+	return row?.onboarding_completed === 1;
+}
+
+export async function markOnboardingComplete(db: D1Database, workspaceId: string): Promise<void> {
+	await db
+		.prepare("UPDATE workspaces SET onboarding_completed = 1, updated_at = datetime('now') WHERE id = ?")
+		.bind(workspaceId)
+		.run();
 }
