@@ -12,6 +12,8 @@ export interface DbFile {
 	mime_type: string | null;
 	version: number;
 	created_at: string;
+	ai_summary: string | null;
+	ai_summary_status: string;
 }
 
 export async function createFileRecord(

@@ -138,6 +138,12 @@ export const actions: Actions = {
 		const answer = sanitizeTextInput(rawAnswer);
 		await updateChecklistItemAnswer(db, itemId, answer);
 
+		// Get workspace for webhook dispatch
+		const txnWs = await db
+			.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
+			.bind(locals.clientSession.transactionId)
+			.first<{ workspace_id: string }>();
+
 		await createAuditEvent(db, {
 			transactionId: locals.clientSession.transactionId,
 			checklistItemId: itemId,
@@ -145,7 +151,7 @@ export const actions: Actions = {
 			actorName: locals.clientSession.clientName,
 			action: 'answer_submitted',
 			detail: answer.length > 100 ? answer.slice(0, 100) + '…' : answer
-		});
+		}, txnWs && platform?.env ? { env: platform.env, workspaceId: txnWs.workspace_id, context: platform.context } : undefined);
 
 		// Record activity for notification dots
 		await recordItemActivity(db, itemId, locals.clientSession.transactionId, 'answer_submitted', 'client', locals.clientSession.clientName);
@@ -200,6 +206,21 @@ export const actions: Actions = {
 			authorName: session.clientName,
 			content
 		});
+
+		// Get workspace for webhook dispatch
+		const commentTxnWs = await db
+			.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
+			.bind(session.transactionId)
+			.first<{ workspace_id: string }>();
+
+		await createAuditEvent(db, {
+			transactionId: session.transactionId,
+			checklistItemId,
+			actorType: 'client',
+			actorName: session.clientName,
+			action: 'comment_added',
+			detail: content.length > 100 ? content.slice(0, 100) + '...' : content
+		}, commentTxnWs && platform?.env ? { env: platform.env, workspaceId: commentTxnWs.workspace_id, context: platform.context } : undefined);
 
 		// Record activity for notification dots
 		if (checklistItemId) {

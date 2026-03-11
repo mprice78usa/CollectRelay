@@ -23,6 +23,10 @@ id = "1bdad54acf4d40ce9069e5b36a301aaa"
 binding = "MAGIC_LINKS"
 id = "e319570c7c1643f991819053d6a607d4"
 
+# Workers AI
+[ai]
+binding = "AI"
+
 # Note: Cron triggers are not supported in Pages projects.
 # Use an external scheduler (e.g., cron-job.org) to call:
 #   GET /api/cron/reminders (daily reminders)

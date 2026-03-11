@@ -97,6 +97,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		.bind(signatureData, itemId)
 		.run();
 
+	// Get workspace ID for webhook dispatch
+	const txnRow = await db
+		.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
+		.bind(session.transactionId)
+		.first<{ workspace_id: string }>();
+
 	// Audit event with full legal context
 	await createAuditEvent(db, {
 		transactionId: session.transactionId,
@@ -107,7 +113,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		detail: `E-signature submitted (${mode} mode) by ${session.clientName} (${session.clientEmail})`,
 		ipAddress,
 		userAgent
-	});
+	}, txnRow && platform?.env ? { env: platform.env, workspaceId: txnRow.workspace_id, context: platform.context } : undefined);
 
 	// Record activity for notification dots
 	await recordItemActivity(

@@ -1,5 +1,12 @@
 /** Audit event database operations */
 import { generateId } from '$server/auth';
+import { dispatchWebhooks } from '$lib/server/webhook-dispatch';
+
+export interface DispatchContext {
+	env: App.Platform['env'];
+	workspaceId: string;
+	context?: ExecutionContext;
+}
 
 export interface DbAuditEvent {
 	id: string;
@@ -27,7 +34,8 @@ export async function createAuditEvent(
 		detail?: string;
 		ipAddress?: string;
 		userAgent?: string;
-	}
+	},
+	dispatch?: DispatchContext
 ): Promise<void> {
 	await db
 		.prepare(
@@ -47,6 +55,15 @@ export async function createAuditEvent(
 			data.userAgent || null
 		)
 		.run();
+
+	// Dispatch webhooks if context provided
+	if (dispatch) {
+		const promise = dispatchWebhooks(dispatch.env, db, dispatch.workspaceId, data)
+			.catch((err) => console.error('Webhook dispatch failed:', err));
+		if (dispatch.context) {
+			dispatch.context.waitUntil(promise);
+		}
+	}
 }
 
 export async function getAuditEventsForTransaction(

@@ -1,4 +1,5 @@
 import { getUserById, getWorkspaceForUser, updateUser, updateWorkspace, getBillingInfo, updateNotificationPrefs } from '$lib/server/db/users';
+import { getWebhooksForWorkspace } from '$lib/server/db/webhooks';
 import { fail } from '@sveltejs/kit';
 import type { PageServerLoad, Actions } from './$types';
 
@@ -36,15 +37,23 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				notifySubmissions: 1,
 				notifyReviewReminders: 1,
 				notifyCompleted: 1
-			}
+			},
+			webhooks: [] as any[]
 		};
 	}
 
-	const [dbUser, workspace, billing] = await Promise.all([
+	const [dbUser, workspace, billing, webhooksRaw] = await Promise.all([
 		getUserById(db, user.id),
 		getWorkspaceForUser(db, user.id),
-		getBillingInfo(db, user.workspaceId)
+		getBillingInfo(db, user.workspaceId),
+		getWebhooksForWorkspace(db, user.workspaceId)
 	]);
+
+	const webhooks = webhooksRaw.map((w) => ({
+		...w,
+		secret: w.secret.slice(0, 10) + '...',
+		events: JSON.parse(w.events)
+	}));
 
 	return {
 		profile: {
@@ -60,7 +69,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			notifySubmissions: dbUser?.notify_submissions ?? 1,
 			notifyReviewReminders: dbUser?.notify_review_reminders ?? 1,
 			notifyCompleted: dbUser?.notify_completed ?? 1
-		}
+		},
+		webhooks
 	};
 };
 

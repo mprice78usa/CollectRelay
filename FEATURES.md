@@ -26,7 +26,7 @@ Templates are your reusable checklists. Set up what you need once, then launch a
   - **Documents** — client uploads a file (PDF, JPG, PNG, DOC, DOCX, XLS, XLSX)
   - **Questions** — client types a text answer
   - **Checkboxes** — client acknowledges a statement
-  - **E-Signatures** — coming soon
+  - **E-Signatures** — legally binding electronic signatures with draw or type modes
 - Mark items as **required or optional**
 - Add **descriptions and examples** so clients know exactly what you need
 - **Duplicate templates** to quickly create variations
@@ -249,7 +249,6 @@ All plans include unlimited transactions, custom templates, client portals, emai
 
 We're always building. Here's what's on the roadmap:
 
-- **E-Signatures** — collect legally binding signatures right inside CollectRelay
 - **AI Document Extraction** — automatically read and verify uploaded documents
 - **More integrations** — connect with the tools you already use
 

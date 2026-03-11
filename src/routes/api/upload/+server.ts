@@ -9,6 +9,7 @@ import { getTransactionWithCreatorEmail } from '$lib/server/db/transactions';
 import { sendSubmissionNotification } from '$lib/server/email';
 import { getNotificationPrefs } from '$lib/server/db/users';
 import { convertImageToPdf, isConvertibleImage } from '$lib/server/pdf-convert';
+import { isSummarizableFile, summarizeFile } from '$lib/server/ai-summary';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
@@ -42,6 +43,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	}
 
 	// Authorization: verify the requester has access to this transaction
+	let workspaceId: string;
 	if (isPro) {
 		const txn = await db
 			.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
@@ -50,10 +52,18 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		if (!txn || txn.workspace_id !== locals.user!.workspaceId) {
 			throw error(403, 'Access denied');
 		}
+		workspaceId = txn.workspace_id;
 	} else if (isClient) {
 		if (transactionId !== locals.clientSession!.transactionId) {
 			throw error(403, 'Access denied');
 		}
+		const txn = await db
+			.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
+			.bind(transactionId)
+			.first<{ workspace_id: string }>();
+		workspaceId = txn?.workspace_id || '';
+	} else {
+		throw error(401, 'Unauthorized');
 	}
 
 	const fileId = generateId();
@@ -121,7 +131,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		actorName: isClient ? locals.clientSession!.clientName : locals.user!.name,
 		action: 'file_uploaded',
 		detail: `Uploaded "${safeName}" (${(file.size / 1024).toFixed(1)} KB)`
-	});
+	}, platform?.env ? { env: platform.env, workspaceId, context: platform.context } : undefined);
 
 	// Record activity for notification dots
 	await recordItemActivity(
@@ -158,6 +168,14 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		} catch (err) {
 			console.error('Failed to send submission notification:', err);
 		}
+	}
+
+	// Trigger AI summarization (non-blocking, runs after response)
+	if (isSummarizableFile(file.type) && platform?.env?.AI) {
+		platform.context?.waitUntil(
+			summarizeFile(platform.env, db, recordId, r2Key, file.type)
+				.catch((err) => console.error('AI summarization failed:', err))
+		);
 	}
 
 	return json({ id: recordId, filename: safeName, size: file.size });

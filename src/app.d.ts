@@ -34,7 +34,9 @@ declare global {
 				TWILIO_ACCOUNT_SID: string;
 				TWILIO_AUTH_TOKEN: string;
 				TWILIO_PHONE_NUMBER: string;
+				AI: Ai;
 			};
+			context?: ExecutionContext;
 		}
 	}
 }

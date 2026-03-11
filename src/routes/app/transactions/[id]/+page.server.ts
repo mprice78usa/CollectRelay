@@ -89,13 +89,17 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 				id: 'mock-file-1', checklist_item_id: 'mock-ci-1', transaction_id: params.id,
 				uploaded_by_client: 1, filename: 'drivers-license.pdf', r2_key: 'mock/key',
 				file_size: 245000, mime_type: 'application/pdf', version: 1,
-				created_at: '2026-03-02T09:00:00Z'
+				created_at: '2026-03-02T09:00:00Z',
+				ai_summary: 'California driver\'s license for Sarah Johnson, issued 2024, expires 2030.',
+				ai_summary_status: 'completed'
 			},
 			{
 				id: 'mock-file-2', checklist_item_id: 'mock-ci-2', transaction_id: params.id,
 				uploaded_by_client: 1, filename: 'paystub-feb-2026.pdf', r2_key: 'mock/key2',
 				file_size: 180000, mime_type: 'application/pdf', version: 1,
-				created_at: '2026-03-03T14:00:00Z'
+				created_at: '2026-03-03T14:00:00Z',
+				ai_summary: null,
+				ai_summary_status: 'processing'
 			}
 		];
 
@@ -181,7 +185,7 @@ export const actions: Actions = {
 			actorName: user.name,
 			action: 'status_changed',
 			detail: `Status changed to ${status}`
-		});
+		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
 		return { success: true };
 	},
@@ -238,7 +242,7 @@ export const actions: Actions = {
 			actorName: user.name,
 			action: 'magic_link_sent',
 			detail: `Magic link sent to ${transaction.client_email}`
-		});
+		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
 		return { success: true, magicLink: magicLinkUrl };
 	},
@@ -278,7 +282,7 @@ export const actions: Actions = {
 			actorName: user.name,
 			action: `item_${action}ed`,
 			detail: reviewNote ? `${action}ed with note: ${reviewNote}` : `Item ${action}ed`
-		});
+		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
 		// Record activity for notification dots
 		await recordItemActivity(db, itemId, params.id, 'item_reviewed', 'pro', user.name);
@@ -340,6 +344,16 @@ export const actions: Actions = {
 			authorName: user.name,
 			content
 		});
+
+		await createAuditEvent(db, {
+			transactionId: params.id,
+			checklistItemId,
+			actorType: 'pro',
+			actorId: user.id,
+			actorName: user.name,
+			action: 'comment_added',
+			detail: content.length > 100 ? content.slice(0, 100) + '...' : content
+		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
 		// Record activity for notification dots
 		if (checklistItemId) {
@@ -624,7 +638,7 @@ export const actions: Actions = {
 			actorName: user.name,
 			action: 'reminder_sent',
 			detail: `Manual reminder sent to ${transaction.client_email}`
-		});
+		}, platform?.env ? { env: platform.env, workspaceId: user.workspaceId, context: platform.context } : undefined);
 
 		return { success: true, nudgeSent: true };
 	},

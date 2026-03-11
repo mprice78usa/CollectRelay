@@ -230,6 +230,18 @@
 		showCommentsFor = next;
 	}
 
+	// AI summary retry
+	let retryingSummary = $state<string | null>(null);
+	async function retrySummary(fileId: string) {
+		retryingSummary = fileId;
+		try {
+			await fetch(`/api/files/${fileId}/summarize`, { method: 'POST' });
+			const { invalidateAll } = await import('$app/navigation');
+			await invalidateAll();
+		} catch { /* ignore */ }
+		retryingSummary = null;
+	}
+
 	let copiedLink = $state(false);
 	function copyMagicLink() {
 		const link = magicLink || `${window.location.origin}/c/mock-token-${txn.id}`;
@@ -534,6 +546,25 @@
 										{file.uploaded_by_client ? 'Client' : 'You'}
 									</span>
 									</div>
+									{#if file.ai_summary_status === 'completed' && file.ai_summary}
+										<div class="ai-summary">
+											<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+											</svg>
+											<span>{file.ai_summary}</span>
+										</div>
+									{:else if file.ai_summary_status === 'processing'}
+										<div class="ai-summary ai-summary-loading">
+											<Spinner size={10} />
+											<span>Analyzing document...</span>
+										</div>
+									{:else if file.ai_summary_status === 'failed'}
+										<div class="ai-summary ai-summary-failed">
+											<button class="retry-summary-btn" onclick={() => retrySummary(file.id)} disabled={retryingSummary === file.id}>
+												{retryingSummary === file.id ? 'Retrying...' : 'Retry AI summary'}
+											</button>
+										</div>
+									{/if}
 								{/each}
 							</div>
 						{/if}
@@ -1901,6 +1932,52 @@
 	.source-client {
 		background: rgba(59, 130, 246, 0.15);
 		color: #3b82f6;
+	}
+
+	/* AI Summary */
+	.ai-summary {
+		display: flex;
+		align-items: flex-start;
+		gap: 6px;
+		margin-left: 28px;
+		padding: 4px 0 2px;
+		font-size: var(--font-size-xs);
+		color: var(--text-secondary);
+		line-height: 1.4;
+	}
+
+	.ai-summary svg {
+		color: #f59e0b;
+		flex-shrink: 0;
+		margin-top: 1px;
+	}
+
+	.ai-summary-loading {
+		color: var(--text-muted);
+	}
+
+	.ai-summary-failed {
+		color: var(--text-muted);
+	}
+
+	.retry-summary-btn {
+		background: none;
+		border: none;
+		color: var(--color-accent);
+		font-size: var(--font-size-xs);
+		cursor: pointer;
+		padding: 0;
+		text-decoration: underline;
+	}
+
+	.retry-summary-btn:hover {
+		color: var(--color-accent-hover);
+	}
+
+	.retry-summary-btn:disabled {
+		opacity: 0.6;
+		cursor: not-allowed;
+		text-decoration: none;
 	}
 
 	/* Pro upload */

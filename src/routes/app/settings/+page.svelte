@@ -14,6 +14,104 @@
 	let notifsSaved = $state(false);
 	let desktopNotifPermission = $state<string>('default');
 
+	// Webhooks
+	let webhooks = $state(data.webhooks || []);
+	let showAddWebhook = $state(false);
+	let webhookUrl = $state('');
+	let webhookDescription = $state('');
+	let webhookEvents = $state<Set<string>>(new Set());
+	let addingWebhook = $state(false);
+	let newWebhookSecret = $state<string | null>(null);
+	let testingWebhookId = $state<string | null>(null);
+	let testResult = $state<{ success: boolean; status: number | null; durationMs: number } | null>(null);
+	let expandedDeliveries = $state<string | null>(null);
+	let deliveryLogs = $state<Record<string, any[]>>({});
+
+	const WEBHOOK_EVENTS = [
+		{ id: 'file_uploaded', label: 'File uploaded' },
+		{ id: 'answer_submitted', label: 'Answer submitted' },
+		{ id: 'signature_submitted', label: 'Signature submitted' },
+		{ id: 'item_reviewed', label: 'Item reviewed' },
+		{ id: 'status_changed', label: 'Status changed' },
+		{ id: 'comment_added', label: 'Comment added' },
+		{ id: 'magic_link_sent', label: 'Magic link sent' },
+		{ id: 'reminder_sent', label: 'Reminder sent' }
+	];
+
+	function toggleWebhookEvent(eventId: string) {
+		const next = new Set(webhookEvents);
+		if (next.has(eventId)) next.delete(eventId);
+		else next.add(eventId);
+		webhookEvents = next;
+	}
+
+	async function createWebhook() {
+		if (!webhookUrl || webhookEvents.size === 0) return;
+		addingWebhook = true;
+		try {
+			const res = await fetch('/api/webhooks', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					url: webhookUrl,
+					events: Array.from(webhookEvents),
+					description: webhookDescription || undefined
+				})
+			});
+			if (res.ok) {
+				const result = await res.json();
+				newWebhookSecret = result.secret;
+				webhookUrl = '';
+				webhookDescription = '';
+				webhookEvents = new Set();
+				showAddWebhook = false;
+				await refreshWebhooks();
+			}
+		} catch { /* ignore */ }
+		addingWebhook = false;
+	}
+
+	async function refreshWebhooks() {
+		try {
+			const res = await fetch('/api/webhooks');
+			if (res.ok) webhooks = await res.json();
+		} catch { /* ignore */ }
+	}
+
+	async function toggleWebhookEnabled(id: string, enabled: boolean) {
+		await fetch(`/api/webhooks/${id}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ enabled: !enabled })
+		});
+		await refreshWebhooks();
+	}
+
+	async function deleteWebhook(id: string) {
+		if (!confirm('Delete this webhook? This cannot be undone.')) return;
+		await fetch(`/api/webhooks/${id}`, { method: 'DELETE' });
+		await refreshWebhooks();
+	}
+
+	async function testWebhook(id: string) {
+		testingWebhookId = id;
+		testResult = null;
+		try {
+			const res = await fetch(`/api/webhooks/${id}/test`, { method: 'POST' });
+			if (res.ok) testResult = await res.json();
+		} catch { /* ignore */ }
+		testingWebhookId = null;
+	}
+
+	async function loadDeliveries(id: string) {
+		if (expandedDeliveries === id) { expandedDeliveries = null; return; }
+		expandedDeliveries = id;
+		try {
+			const res = await fetch(`/api/webhooks/${id}/deliveries`);
+			if (res.ok) deliveryLogs[id] = await res.json();
+		} catch { /* ignore */ }
+	}
+
 	$effect(() => {
 		if (typeof window !== 'undefined') {
 			desktopNotifPermission = getNotificationPermission();
@@ -376,6 +474,132 @@
 					</button>
 				</div>
 			</form>
+			</div>
+		</Card>
+	</section>
+
+	<!-- Webhooks Section -->
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="section-icon">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+				</svg>
+			</div>
+			<div>
+				<h2>Webhooks</h2>
+				<p class="section-desc">Send event notifications to external URLs for CRM integrations.</p>
+			</div>
+		</div>
+
+		<Card>
+			{#if newWebhookSecret}
+				<div class="webhook-secret-banner">
+					<strong>Webhook secret (shown once):</strong>
+					<code>{newWebhookSecret}</code>
+					<button class="btn-copy-secret" onclick={() => { navigator.clipboard.writeText(newWebhookSecret!); newWebhookSecret = null; }}>
+						Copy & dismiss
+					</button>
+				</div>
+			{/if}
+
+			{#if testResult}
+				<div class="test-result" class:test-success={testResult.success} class:test-fail={!testResult.success}>
+					{testResult.success ? 'Test delivered successfully' : 'Test delivery failed'}
+					{#if testResult.status} &middot; HTTP {testResult.status}{/if}
+					&middot; {testResult.durationMs}ms
+					<button class="dismiss-test" onclick={() => testResult = null}>dismiss</button>
+				</div>
+			{/if}
+
+			<div class="webhooks-list">
+				{#if webhooks.length === 0 && !showAddWebhook}
+					<p class="webhooks-empty">No webhooks configured. Add one to send event notifications to external services.</p>
+				{/if}
+
+				{#each webhooks as wh}
+					<div class="webhook-item" class:webhook-disabled={!wh.enabled}>
+						<div class="webhook-header">
+							<div class="webhook-info">
+								<span class="webhook-url">{wh.url}</span>
+								{#if wh.description}
+									<span class="webhook-desc">{wh.description}</span>
+								{/if}
+								<div class="webhook-events-list">
+									{#each (Array.isArray(wh.events) ? wh.events : []) as evt}
+										<span class="webhook-event-tag">{evt}</span>
+									{/each}
+								</div>
+							</div>
+							<div class="webhook-actions">
+								<label class="toggle toggle-sm">
+									<input type="checkbox" checked={!!wh.enabled} onchange={() => toggleWebhookEnabled(wh.id, !!wh.enabled)} />
+									<span class="toggle-slider"></span>
+								</label>
+								<button class="btn-webhook-action" onclick={() => testWebhook(wh.id)} disabled={testingWebhookId === wh.id}>
+									{testingWebhookId === wh.id ? 'Sending...' : 'Test'}
+								</button>
+								<button class="btn-webhook-action" onclick={() => loadDeliveries(wh.id)}>
+									{expandedDeliveries === wh.id ? 'Hide log' : 'Log'}
+								</button>
+								<button class="btn-webhook-action btn-danger-text" onclick={() => deleteWebhook(wh.id)}>Delete</button>
+							</div>
+						</div>
+						{#if expandedDeliveries === wh.id}
+							<div class="delivery-log">
+								{#if !deliveryLogs[wh.id] || deliveryLogs[wh.id].length === 0}
+									<p class="delivery-empty">No deliveries yet.</p>
+								{:else}
+									{#each deliveryLogs[wh.id] as d}
+										<div class="delivery-row" class:delivery-success={!!d.success} class:delivery-fail={!d.success}>
+											<span class="delivery-event">{d.event_type}</span>
+											<span class="delivery-status">{d.response_status || 'Error'}</span>
+											<span class="delivery-time">{d.duration_ms}ms</span>
+											<span class="delivery-date">{new Date(d.created_at).toLocaleString()}</span>
+										</div>
+									{/each}
+								{/if}
+							</div>
+						{/if}
+					</div>
+				{/each}
+
+				{#if showAddWebhook}
+					<div class="webhook-form">
+						<div class="form-group">
+							<label for="wh-url">Endpoint URL</label>
+							<input type="url" id="wh-url" bind:value={webhookUrl} placeholder="https://your-service.com/webhook" required />
+						</div>
+						<div class="form-group">
+							<label for="wh-desc">Description <span class="optional">(optional)</span></label>
+							<input type="text" id="wh-desc" bind:value={webhookDescription} placeholder="e.g. Zapier integration" />
+						</div>
+						<div class="form-group">
+							<label>Events</label>
+							<div class="event-checkboxes">
+								{#each WEBHOOK_EVENTS as evt}
+									<label class="event-check">
+										<input type="checkbox" checked={webhookEvents.has(evt.id)} onchange={() => toggleWebhookEvent(evt.id)} />
+										{evt.label}
+									</label>
+								{/each}
+							</div>
+						</div>
+						<div class="form-footer">
+							<button class="btn-secondary-sm" onclick={() => showAddWebhook = false}>Cancel</button>
+							<button class="btn-primary" onclick={createWebhook} disabled={addingWebhook || !webhookUrl || webhookEvents.size === 0}>
+								{addingWebhook ? 'Creating...' : 'Create Webhook'}
+							</button>
+						</div>
+					</div>
+				{:else}
+					<button class="btn-add-webhook" onclick={() => showAddWebhook = true}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+						</svg>
+						Add Webhook
+					</button>
+				{/if}
 			</div>
 		</Card>
 	</section>
@@ -838,8 +1062,280 @@
 		background: var(--accent-hover);
 	}
 
+	/* Webhooks */
+	.webhooks-empty {
+		color: var(--text-muted);
+		font-size: var(--font-size-sm);
+		padding: var(--space-sm) 0;
+	}
+
+	.webhook-item {
+		padding: var(--space-md) 0;
+		border-bottom: 1px solid var(--border-color);
+	}
+
+	.webhook-item:last-child { border-bottom: none; }
+
+	.webhook-disabled { opacity: 0.5; }
+
+	.webhook-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: var(--space-md);
+	}
+
+	.webhook-info {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-width: 0;
+	}
+
+	.webhook-url {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--text-primary);
+		word-break: break-all;
+	}
+
+	.webhook-desc {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+
+	.webhook-events-list {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 4px;
+		margin-top: 4px;
+	}
+
+	.webhook-event-tag {
+		font-size: 10px;
+		padding: 1px 6px;
+		border-radius: var(--radius-full);
+		background: var(--bg-tertiary);
+		color: var(--text-secondary);
+	}
+
+	.webhook-actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		flex-shrink: 0;
+	}
+
+	.toggle-sm {
+		width: 36px;
+		height: 20px;
+	}
+
+	.toggle-sm .toggle-slider::before {
+		width: 14px;
+		height: 14px;
+	}
+
+	.toggle-sm input:checked + .toggle-slider::before {
+		transform: translateX(16px);
+	}
+
+	.btn-webhook-action {
+		background: none;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+		font-size: var(--font-size-xs);
+		padding: 3px 8px;
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		white-space: nowrap;
+	}
+
+	.btn-webhook-action:hover {
+		border-color: var(--text-muted);
+		color: var(--text-primary);
+	}
+
+	.btn-webhook-action:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.btn-danger-text {
+		color: #ef4444;
+		border-color: rgba(239, 68, 68, 0.3);
+	}
+
+	.btn-danger-text:hover {
+		border-color: #ef4444;
+		color: #ef4444;
+	}
+
+	.webhook-secret-banner {
+		background: rgba(245, 158, 11, 0.1);
+		border: 1px solid rgba(245, 158, 11, 0.3);
+		border-radius: var(--radius-md);
+		padding: var(--space-md);
+		margin-bottom: var(--space-md);
+		font-size: var(--font-size-sm);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.webhook-secret-banner code {
+		background: var(--bg-primary);
+		padding: 4px 8px;
+		border-radius: var(--radius-sm);
+		font-family: var(--font-mono, monospace);
+		font-size: var(--font-size-xs);
+		word-break: break-all;
+	}
+
+	.btn-copy-secret {
+		align-self: flex-start;
+		background: none;
+		border: 1px solid rgba(245, 158, 11, 0.4);
+		color: #f59e0b;
+		padding: 4px 12px;
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.test-result {
+		padding: var(--space-sm) var(--space-md);
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--space-md);
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.test-success {
+		background: rgba(16, 185, 129, 0.1);
+		color: #10b981;
+	}
+
+	.test-fail {
+		background: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+	}
+
+	.dismiss-test {
+		margin-left: auto;
+		background: none;
+		border: none;
+		color: inherit;
+		opacity: 0.6;
+		cursor: pointer;
+		font-size: var(--font-size-xs);
+		text-decoration: underline;
+	}
+
+	.delivery-log {
+		margin-top: var(--space-sm);
+		padding: var(--space-sm);
+		background: var(--bg-primary);
+		border-radius: var(--radius-md);
+		max-height: 200px;
+		overflow-y: auto;
+	}
+
+	.delivery-empty {
+		color: var(--text-muted);
+		font-size: var(--font-size-xs);
+		padding: var(--space-sm);
+	}
+
+	.delivery-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: 4px var(--space-sm);
+		font-size: var(--font-size-xs);
+		border-radius: var(--radius-sm);
+	}
+
+	.delivery-row:nth-child(even) { background: var(--bg-tertiary); }
+
+	.delivery-success .delivery-status { color: #10b981; }
+	.delivery-fail .delivery-status { color: #ef4444; }
+
+	.delivery-event { font-weight: 500; min-width: 100px; }
+	.delivery-status { min-width: 50px; font-weight: 600; }
+	.delivery-time { color: var(--text-muted); min-width: 50px; }
+	.delivery-date { color: var(--text-muted); margin-left: auto; }
+
+	.webhook-form {
+		padding: var(--space-md) 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-md);
+	}
+
+	.event-checkboxes {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-sm);
+	}
+
+	.event-check {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		cursor: pointer;
+	}
+
+	.event-check input[type="checkbox"] {
+		accent-color: var(--color-accent);
+	}
+
+	.btn-secondary-sm {
+		padding: var(--space-sm) var(--space-lg);
+		background: transparent;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		cursor: pointer;
+	}
+
+	.btn-secondary-sm:hover {
+		border-color: var(--text-muted);
+	}
+
+	.btn-add-webhook {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-md);
+		background: transparent;
+		border: 1px dashed var(--border-color);
+		border-radius: var(--radius-md);
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		margin-top: var(--space-sm);
+	}
+
+	.btn-add-webhook:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+
 	@media (max-width: 640px) {
 		.form-grid { grid-template-columns: 1fr; }
 		.workspace-meta { flex-direction: column; gap: var(--space-md); }
+		.webhook-header { flex-direction: column; }
+		.webhook-actions { flex-wrap: wrap; }
+		.event-checkboxes { grid-template-columns: 1fr; }
 	}
 </style>
