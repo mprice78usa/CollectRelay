@@ -12,7 +12,7 @@
 
 <main class="coming-soon-page">
 	<div class="container">
-		<span class="badge">Coming Soon</span>
+		<span class="badge">Industry</span>
 		<h1>CollectRelay for Contractors</h1>
 		<p class="lead">
 			Permits, insurance certs, lien waivers, change orders — stop chasing subcontractors
@@ -26,26 +26,26 @@
 					<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
 				</svg>
 				<h3>Permit & License Tracking</h3>
-				<p>Collect permits, licenses, and certifications from subs before they step on site.</p>
+				<p>Collect building permits, contractor licenses, and trade certifications from subs before they step on site. Create reusable templates for each project type so nothing gets missed.</p>
 			</div>
 			<div class="feature">
 				<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
 				</svg>
 				<h3>Insurance Certificates</h3>
-				<p>Request COIs and W-9s from every subcontractor with automated reminders.</p>
+				<p>Request COIs, W-9s, and workers' comp certificates from every subcontractor with a single link. Automated reminders follow up so you don't have to chase anyone down.</p>
 			</div>
 			<div class="feature">
 				<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
 				</svg>
 				<h3>Lien Waivers & Change Orders</h3>
-				<p>Get signatures on lien waivers and change orders without the paper chase.</p>
+				<p>Get e-signatures on lien waivers and change orders without the paper chase. Built-in milestone tracking keeps every project phase organized from permitting through final inspection.</p>
 			</div>
 		</div>
 
 		<div class="cta-section">
-			<a href="/register" class="btn-primary">Get early access</a>
+			<a href="/register" class="btn-primary">Get started free</a>
 			<a href="/" class="btn-outline">Back to home</a>
 		</div>
 	</div>
@@ -63,8 +63,8 @@
 	.badge {
 		display: inline-block;
 		padding: var(--space-xs) var(--space-md);
-		background-color: rgba(245, 158, 11, 0.15);
-		color: var(--color-warning);
+		background-color: rgba(16, 185, 129, 0.12);
+		color: #10b981;
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		border-radius: var(--radius-full);

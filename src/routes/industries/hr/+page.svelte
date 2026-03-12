@@ -12,7 +12,7 @@
 
 <main class="coming-soon-page">
 	<div class="container">
-		<span class="badge">Coming Soon</span>
+		<span class="badge">Industry</span>
 		<h1>CollectRelay for HR</h1>
 		<p class="lead">
 			New hire paperwork, I-9 documents, benefits enrollment, performance reviews — HR teams
@@ -45,7 +45,7 @@
 		</div>
 
 		<div class="cta-section">
-			<a href="/register" class="btn-primary">Get early access</a>
+			<a href="/register" class="btn-primary">Get started free</a>
 			<a href="/" class="btn-outline">Back to home</a>
 		</div>
 	</div>
@@ -63,8 +63,8 @@
 	.badge {
 		display: inline-block;
 		padding: var(--space-xs) var(--space-md);
-		background-color: rgba(245, 158, 11, 0.15);
-		color: var(--color-warning);
+		background-color: rgba(16, 185, 129, 0.12);
+		color: #10b981;
 		font-size: var(--font-size-sm);
 		font-weight: 600;
 		border-radius: var(--radius-full);
