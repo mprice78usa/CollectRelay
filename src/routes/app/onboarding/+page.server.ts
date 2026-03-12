@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
-import { getTemplatesForWorkspace } from '$lib/server/db/templates';
+import { getTemplatesForWorkspace, cloneStarterTemplates, workspaceHasTemplates } from '$lib/server/db/templates';
 import { createTransaction } from '$lib/server/db/transactions';
 import { createAuditEvent } from '$lib/server/db/audit';
 import { updateUser, markOnboardingComplete, getBillingInfo } from '$lib/server/db/users';
@@ -92,6 +92,12 @@ export const actions: Actions = {
 			.prepare("UPDATE workspaces SET industry = ?, updated_at = datetime('now') WHERE id = ?")
 			.bind(industry, user.workspaceId)
 			.run();
+
+		// Clone industry-specific starter templates now so they're ready for step 3
+		const hasTemplates = await workspaceHasTemplates(db, user.workspaceId);
+		if (!hasTemplates) {
+			await cloneStarterTemplates(db, user.workspaceId, user.id, industry);
+		}
 
 		return { success: true, step: 2 };
 	},
