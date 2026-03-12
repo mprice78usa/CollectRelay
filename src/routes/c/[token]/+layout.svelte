@@ -11,8 +11,8 @@
 	<header class="client-header">
 		<div class="header-inner">
 			<a href="/" class="client-logo">
-				{#if hasCustomLogo}
-					<img src="/api/files/{branding.brand_logo_r2_key}" alt="{brandName}" class="brand-logo-img" />
+				{#if hasCustomLogo && data.workspaceId}
+					<img src="/api/branding/logo?wid={data.workspaceId}" alt="{brandName}" class="brand-logo-img" />
 				{:else}
 					<svg viewBox="0 0 32 32" width="24" height="24" aria-hidden="true">
 						<rect width="32" height="32" rx="6" fill="#1a1f2e"/>

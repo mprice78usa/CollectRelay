@@ -290,7 +290,12 @@
 			const formData = new FormData();
 			formData.append('logo', file);
 			const res = await fetch('/api/branding/logo', { method: 'POST', body: formData });
-			if (!res.ok) {
+			if (res.ok) {
+				const result = await res.json();
+				data.branding.brand_logo_r2_key = result.r2Key;
+				// Clear blob preview now that real upload succeeded — use cache-bust URL
+				logoPreview = `/api/branding/logo?wid=${data.user.workspaceId}&t=${Date.now()}`;
+			} else {
 				const err = await res.json();
 				alert(err.message || 'Upload failed');
 				logoPreview = null;
@@ -584,7 +589,7 @@
 					<div class="logo-preview">
 						{#if logoPreview || data.branding?.brand_logo_r2_key}
 							<img
-								src={logoPreview || `/api/files/${data.branding.brand_logo_r2_key}`}
+								src={logoPreview || `/api/branding/logo?wid=${data.user.workspaceId}`}
 								alt="Brand logo"
 								class="logo-img"
 							/>
@@ -641,7 +646,7 @@
 					<div class="preview-label">Client Portal Preview</div>
 					<div class="preview-header">
 						{#if logoPreview || data.branding?.brand_logo_r2_key}
-							<img src={logoPreview || `/api/files/${data.branding.brand_logo_r2_key}`} alt="" class="preview-logo" />
+							<img src={logoPreview || `/api/branding/logo?wid=${data.user.workspaceId}`} alt="" class="preview-logo" />
 						{:else}
 							<svg viewBox="0 0 32 32" width="24" height="24" class="preview-logo-svg">
 								<rect width="32" height="32" rx="6" fill="var(--preview-accent)" opacity="0.15"/>

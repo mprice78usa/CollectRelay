@@ -67,9 +67,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return addSecurityHeaders(await resolve(event), path);
 	}
 
-	// API health + Stripe webhook (no auth needed, Stripe signs these)
-	if (path === '/api/health' || path === '/api/stripe/webhook') {
-		return resolve(event);
+	// API health, Stripe webhook, branding logo (no auth needed)
+	if (path === '/api/health' || path === '/api/stripe/webhook' || path === '/api/branding/logo') {
+		return addSecurityHeaders(await resolve(event), path);
 	}
 
 	// Public API v1 — API key authentication

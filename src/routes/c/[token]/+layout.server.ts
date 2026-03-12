@@ -13,6 +13,8 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 	let branding: { brand_logo_r2_key: string | null; brand_color: string | null; brand_name: string | null } | null = null;
 	const db = platform?.env?.DB;
 
+	let workspaceId: string | null = null;
+
 	if (db && session.transactionId) {
 		const txn = await db
 			.prepare('SELECT workspace_id FROM transactions WHERE id = ?')
@@ -20,6 +22,7 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 			.first<{ workspace_id: string }>();
 
 		if (txn?.workspace_id) {
+			workspaceId = txn.workspace_id;
 			branding = await getWorkspaceBranding(db, txn.workspace_id);
 		}
 	}
@@ -30,6 +33,7 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 			clientEmail: session.clientEmail,
 			transactionId: session.transactionId
 		},
+		workspaceId,
 		branding: branding ?? { brand_logo_r2_key: null, brand_color: null, brand_name: null }
 	};
 };
