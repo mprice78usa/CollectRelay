@@ -195,6 +195,66 @@
 		team25: 'Team 25'
 	};
 
+	// Team Seats
+	let seatInfo = $state<{
+		plan: string;
+		includedSeats: number;
+		extraSeats: number;
+		totalSeats: number;
+		canAddSeats: boolean;
+		seatPriceMonthly: number;
+		seatPriceAnnual: number;
+		extraMonthlyCost?: number;
+	} | null>(null);
+	let seatLoading = $state(false);
+	let seatSaving = $state(false);
+	let seatError = $state<string | null>(null);
+	let seatSuccess = $state(false);
+	let pendingExtraSeats = $state(0);
+
+	async function loadSeatInfo() {
+		try {
+			const res = await fetch('/api/stripe/seats');
+			if (res.ok) {
+				seatInfo = await res.json();
+				pendingExtraSeats = seatInfo?.extraSeats || 0;
+			}
+		} catch { /* ignore */ }
+	}
+
+	async function updateSeats() {
+		if (!seatInfo || pendingExtraSeats === seatInfo.extraSeats) return;
+		seatSaving = true;
+		seatError = null;
+		try {
+			const res = await fetch('/api/stripe/seats', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ extraSeats: pendingExtraSeats })
+			});
+			if (res.ok) {
+				const result = await res.json();
+				seatInfo = { ...seatInfo!, extraSeats: result.extraSeats, totalSeats: result.totalSeats };
+				seatSuccess = true;
+				setTimeout(() => seatSuccess = false, 3000);
+			} else {
+				const err = await res.json().catch(() => ({}));
+				seatError = err.message || 'Failed to update seats';
+			}
+		} catch {
+			seatError = 'Network error. Please try again.';
+		} finally {
+			seatSaving = false;
+		}
+	}
+
+	// Load seat info on mount if Team plan
+	$effect(() => {
+		if (data.billing?.planKey === 'team' && data.billing?.hasActiveSubscription) {
+			loadSeatInfo();
+		}
+	});
+
 	async function openBillingPortal() {
 		loadingPortal = true;
 		try {
@@ -675,6 +735,94 @@
 						</div>
 					{/if}
 				</div>
+
+				<!-- Team Seats Management -->
+				{#if seatInfo?.canAddSeats && data.billing?.planKey === 'team'}
+					<div class="seats-section">
+						<div class="seats-header">
+							<h3 class="seats-title">Team Members</h3>
+							<p class="seats-subtitle">
+								{seatInfo.includedSeats} seats included · Additional seats ${seatInfo.seatPriceMonthly}/mo each
+							</p>
+						</div>
+
+						<div class="seats-control">
+							<div class="seats-display">
+								<div class="seats-bar">
+									<div class="seats-included">
+										<span class="seats-count">{seatInfo.includedSeats}</span>
+										<span class="seats-label">included</span>
+									</div>
+									{#if pendingExtraSeats > 0}
+										<div class="seats-extra">
+											<span class="seats-count">+{pendingExtraSeats}</span>
+											<span class="seats-label">extra</span>
+										</div>
+									{/if}
+									<div class="seats-total">
+										<span class="seats-total-number">{seatInfo.includedSeats + pendingExtraSeats}</span>
+										<span class="seats-label">total</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="seats-adjuster">
+								<span class="adjuster-label">Extra seats</span>
+								<div class="adjuster-controls">
+									<button
+										class="adjuster-btn"
+										onclick={() => pendingExtraSeats = Math.max(0, pendingExtraSeats - 1)}
+										disabled={pendingExtraSeats === 0 || seatSaving}
+										aria-label="Remove seat"
+									>
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+									</button>
+									<span class="adjuster-value">{pendingExtraSeats}</span>
+									<button
+										class="adjuster-btn"
+										onclick={() => pendingExtraSeats = Math.min(95, pendingExtraSeats + 1)}
+										disabled={pendingExtraSeats >= 95 || seatSaving}
+										aria-label="Add seat"
+									>
+										<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+									</button>
+								</div>
+							</div>
+
+							{#if pendingExtraSeats !== seatInfo.extraSeats}
+								<div class="seats-update">
+									<div class="seats-cost-preview">
+										{#if pendingExtraSeats > 0}
+											Extra seats: <strong>${pendingExtraSeats * seatInfo.seatPriceMonthly}/mo</strong>
+										{:else}
+											No extra seats — included {seatInfo.includedSeats} only
+										{/if}
+									</div>
+									<button
+										class="btn-primary seats-save-btn"
+										onclick={updateSeats}
+										disabled={seatSaving}
+									>
+										{seatSaving ? 'Updating...' : pendingExtraSeats > seatInfo.extraSeats ? 'Add Seats' : 'Remove Seats'}
+									</button>
+								</div>
+							{/if}
+
+							{#if seatError}
+								<p class="seats-error">{seatError}</p>
+							{/if}
+
+							{#if seatSuccess}
+								<p class="seats-success">
+									<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+										<polyline points="20 6 9 17 4 12" />
+									</svg>
+									Seats updated — billing adjusted automatically
+								</p>
+							{/if}
+						</div>
+					</div>
+				{/if}
 
 				<div class="billing-actions">
 					{#if data.billing.hasActiveSubscription || data.billing.subscriptionStatus === 'past_due'}
@@ -1418,6 +1566,171 @@
 	.status-badge.expired {
 		background: rgba(245, 158, 11, 0.15);
 		color: #f59e0b;
+	}
+
+	/* Team Seats */
+	.seats-section {
+		border-top: 1px solid var(--border-primary);
+		padding-top: var(--space-xl);
+	}
+
+	.seats-header {
+		margin-bottom: var(--space-lg);
+	}
+
+	.seats-title {
+		font-size: var(--font-size-md);
+		font-weight: 600;
+		color: var(--text-primary);
+		margin-bottom: var(--space-xs);
+	}
+
+	.seats-subtitle {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+
+	.seats-control {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-lg);
+	}
+
+	.seats-bar {
+		display: flex;
+		align-items: center;
+		gap: var(--space-lg);
+		padding: var(--space-md) var(--space-lg);
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
+	}
+
+	.seats-included,
+	.seats-extra,
+	.seats-total {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.seats-included .seats-count {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		color: var(--accent);
+	}
+
+	.seats-extra .seats-count {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		color: #3b82f6;
+	}
+
+	.seats-total {
+		margin-left: auto;
+		padding-left: var(--space-lg);
+		border-left: 1px solid var(--border-primary);
+	}
+
+	.seats-total-number {
+		font-size: var(--font-size-xxl);
+		font-weight: 800;
+		color: var(--text-primary);
+	}
+
+	.seats-label {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.seats-adjuster {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.adjuster-label {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		font-weight: 500;
+	}
+
+	.adjuster-controls {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+	}
+
+	.adjuster-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-primary);
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+		cursor: pointer;
+		transition: all 0.15s;
+	}
+
+	.adjuster-btn:hover:not(:disabled) {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+
+	.adjuster-btn:disabled {
+		opacity: 0.3;
+		cursor: not-allowed;
+	}
+
+	.adjuster-value {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		color: var(--text-primary);
+		min-width: 32px;
+		text-align: center;
+	}
+
+	.seats-update {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-md) var(--space-lg);
+		background: rgba(59, 130, 246, 0.08);
+		border: 1px solid rgba(59, 130, 246, 0.2);
+		border-radius: var(--radius-md);
+	}
+
+	.seats-cost-preview {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	.seats-cost-preview strong {
+		color: var(--text-primary);
+	}
+
+	.seats-save-btn {
+		padding: var(--space-xs) var(--space-lg) !important;
+		font-size: var(--font-size-sm) !important;
+	}
+
+	.seats-error {
+		font-size: var(--font-size-sm);
+		color: #ef4444;
+		padding: var(--space-sm) 0;
+	}
+
+	.seats-success {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		font-size: var(--font-size-sm);
+		color: var(--accent);
+		padding: var(--space-sm) 0;
 	}
 
 	.billing-actions {
