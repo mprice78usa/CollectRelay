@@ -621,7 +621,10 @@
 					return async ({ update }) => {
 						savingBranding = false;
 						showSavedBriefly((v) => (brandingSaved = v));
-						await update();
+						await update({ reset: false });
+						// Re-sync local state from refreshed server data
+						brandColor = data.branding?.brand_color || '';
+						brandName = data.branding?.brand_name || '';
 					};
 				}}
 			>
