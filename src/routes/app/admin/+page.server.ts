@@ -213,6 +213,7 @@ export const actions: Actions = {
 			db.prepare('DELETE FROM api_keys WHERE workspace_id = ?').bind(workspaceId),
 			// Remove webhook configs
 			db.prepare('DELETE FROM webhooks WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM webhook_deliveries WHERE webhook_id IN (SELECT id FROM webhooks WHERE workspace_id = ?)').bind(workspaceId),
 			// Remove push subscriptions
 			db.prepare('DELETE FROM push_subscriptions WHERE workspace_id = ?').bind(workspaceId),
 			// Remove template items (via template)
@@ -225,7 +226,6 @@ export const actions: Actions = {
 			db.prepare('DELETE FROM checklist_items WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM files WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM audit_events WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
-			db.prepare('DELETE FROM notifications WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			// Remove transactions
 			db.prepare('DELETE FROM transactions WHERE workspace_id = ?').bind(workspaceId),
 			// Remove workspace
