@@ -630,7 +630,7 @@
 						<label for="brand-color">Accent Color</label>
 						<div class="color-input-row">
 							<input type="color" id="brand-color-picker" value={brandColor || '#10B981'} oninput={(e) => brandColor = (e.target as HTMLInputElement).value} class="color-picker" />
-							<input type="text" id="brand-color" name="brandColor" bind:value={brandColor} placeholder="#10B981" pattern="^#[0-9a-fA-F]{6}$" class="color-text" />
+							<input type="text" id="brand-color" name="brandColor" bind:value={brandColor} placeholder="#10B981" class="color-text" />
 						</div>
 						<span class="form-hint">Used for buttons and highlights in the client portal.</span>
 					</div>
