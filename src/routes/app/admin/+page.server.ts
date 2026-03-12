@@ -203,34 +203,34 @@ export const actions: Actions = {
 		if (!targetUserId || !workspaceId) return fail(400, { error: 'User ID and workspace ID required' });
 		if (targetUserId === user.id) return fail(400, { error: 'Cannot delete yourself' });
 
-		// Delete workspace data, then user (FK cascades handle most child records)
+		// Delete in FK-safe order: children before parents, split into two batches
+		// Batch 1: Transaction children (deepest level)
 		await db.batch([
-			// Remove team members
-			db.prepare('DELETE FROM workspace_members WHERE workspace_id = ?').bind(workspaceId),
-			// Remove invitations
-			db.prepare('DELETE FROM workspace_invitations WHERE workspace_id = ?').bind(workspaceId),
-			// Remove API keys
-			db.prepare('DELETE FROM api_keys WHERE workspace_id = ?').bind(workspaceId),
-			// Remove webhook configs
-			db.prepare('DELETE FROM webhooks WHERE workspace_id = ?').bind(workspaceId),
-			db.prepare('DELETE FROM webhook_deliveries WHERE webhook_id IN (SELECT id FROM webhooks WHERE workspace_id = ?)').bind(workspaceId),
-			// Remove push subscriptions
-			db.prepare('DELETE FROM push_subscriptions WHERE workspace_id = ?').bind(workspaceId),
-			// Remove template items (via template)
-			db.prepare('DELETE FROM template_items WHERE template_id IN (SELECT id FROM templates WHERE workspace_id = ?)').bind(workspaceId),
-			// Remove templates
-			db.prepare('DELETE FROM templates WHERE workspace_id = ?').bind(workspaceId),
-			// Remove document library
-			db.prepare('DELETE FROM document_library WHERE workspace_id = ?').bind(workspaceId),
-			// Remove checklist items, files, audit trail for transactions
-			db.prepare('DELETE FROM checklist_items WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM item_activity WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM activity_seen WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM files WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM comments WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM audit_events WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
-			// Remove transactions
+			db.prepare('DELETE FROM checklist_items WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM client_sessions WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM transaction_custom_fields WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM transaction_collaborators WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM transaction_milestones WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM partner_links WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+		]);
+		// Batch 2: Transactions, then templates, workspace-level data, workspace, user
+		await db.batch([
 			db.prepare('DELETE FROM transactions WHERE workspace_id = ?').bind(workspaceId),
-			// Remove workspace
+			db.prepare('DELETE FROM template_items WHERE template_id IN (SELECT id FROM templates WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM templates WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM webhook_deliveries WHERE webhook_id IN (SELECT id FROM webhooks WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM webhooks WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM document_library WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM api_keys WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM push_subscriptions WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM workspace_invitations WHERE workspace_id = ?').bind(workspaceId),
+			db.prepare('DELETE FROM workspace_members WHERE workspace_id = ?').bind(workspaceId),
 			db.prepare('DELETE FROM workspaces WHERE id = ?').bind(workspaceId),
-			// Remove user
 			db.prepare('DELETE FROM users WHERE id = ?').bind(targetUserId),
 		]);
 
