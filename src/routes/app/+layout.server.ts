@@ -12,12 +12,15 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 	const db = platform?.env?.DB;
 
 	// Auto-clone starter templates on first visit (if DB available)
+	// Skip during onboarding — templates are cloned in the setIndustry action instead
 	if (db && user.workspaceId) {
-		const hasTemplates = await workspaceHasTemplates(db, user.workspaceId);
-		if (!hasTemplates) {
-			const ws = await db.prepare('SELECT industry FROM workspaces WHERE id = ?')
-				.bind(user.workspaceId).first<{ industry: string }>();
-			await cloneStarterTemplates(db, user.workspaceId, user.id, ws?.industry || 'real_estate');
+		const ws = await db.prepare('SELECT industry, onboarding_completed FROM workspaces WHERE id = ?')
+			.bind(user.workspaceId).first<{ industry: string; onboarding_completed: number }>();
+		if (ws?.onboarding_completed === 1) {
+			const hasTemplates = await workspaceHasTemplates(db, user.workspaceId);
+			if (!hasTemplates) {
+				await cloneStarterTemplates(db, user.workspaceId, user.id, ws.industry || 'real_estate');
+			}
 		}
 	}
 
