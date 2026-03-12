@@ -67,8 +67,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return addSecurityHeaders(await resolve(event), path);
 	}
 
-	// API health, Stripe webhook, branding logo (no auth needed)
-	if (path === '/api/health' || path === '/api/stripe/webhook' || path === '/api/branding/logo') {
+	// API health, Stripe webhook (no auth needed)
+	if (path === '/api/health' || path === '/api/stripe/webhook') {
+		return addSecurityHeaders(await resolve(event), path);
+	}
+
+	// Branding logo: GET is public (client portal), POST/DELETE need auth (handled below)
+	if (path === '/api/branding/logo' && event.request.method === 'GET') {
 		return addSecurityHeaders(await resolve(event), path);
 	}
 
