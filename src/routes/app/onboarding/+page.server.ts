@@ -168,15 +168,11 @@ export const actions: Actions = {
 	},
 
 	skip: async ({ locals, platform }) => {
+		// Keep skip action as a no-op fallback (not linked in UI)
 		const db = platform?.env?.DB;
 		const user = locals.user;
-		if (!db || !user?.workspaceId) {
-			// Dev mode: redirect to dashboard
-			throw redirect(303, '/app');
-		}
-
+		if (!db || !user?.workspaceId) throw redirect(303, '/app');
 		await markOnboardingComplete(db, user.workspaceId);
-
 		throw redirect(303, '/app');
 	}
 };

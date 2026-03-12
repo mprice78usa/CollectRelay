@@ -348,9 +348,6 @@
 			</form>
 		{/if}
 
-		<form method="POST" action="?/skip" use:enhance class="skip-form">
-			<button type="submit" class="skip-link">Skip for now</button>
-		</form>
 	</div>
 </div>
 
@@ -671,25 +668,6 @@
 		font-size: 0.8125rem;
 		margin-bottom: 1rem;
 	}
-
-	/* Skip */
-	.skip-form {
-		text-align: center;
-		margin-top: 1.25rem;
-	}
-
-	.skip-link {
-		background: none;
-		border: none;
-		color: var(--text-muted);
-		font-size: 0.75rem;
-		cursor: pointer;
-		text-decoration: underline;
-		opacity: 0.7;
-		transition: opacity 0.15s;
-	}
-
-	.skip-link:hover { opacity: 1; }
 
 	@media (max-width: 640px) {
 		.form-row { grid-template-columns: 1fr; }
