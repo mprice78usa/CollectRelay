@@ -1,15 +1,23 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { verifyWebhookSignature } from '$lib/server/stripe';
+import { verifyWebhookSignature, TEAM_INCLUDED_SEATS } from '$lib/server/stripe';
 
-/** Map Stripe plan metadata to workspace limits */
-function getPlanLimits(planKey: string): { maxUsers: number; maxStorageBytes: number } {
+/** Map Stripe plan metadata to workspace limits, accounting for extra seats */
+function getPlanLimits(planKey: string, extraSeats: number = 0): { maxUsers: number; maxStorageBytes: number } {
 	const plans: Record<string, { maxUsers: number; maxStorageBytes: number }> = {
 		free: { maxUsers: 1, maxStorageBytes: 500 * 1024 * 1024 },                    // 500MB
 		pro: { maxUsers: 1, maxStorageBytes: 5 * 1024 * 1024 * 1024 },                // 5GB
-		team: { maxUsers: 5, maxStorageBytes: 25 * 1024 * 1024 * 1024 }                // 25GB
+		team: { maxUsers: TEAM_INCLUDED_SEATS + extraSeats, maxStorageBytes: 25 * 1024 * 1024 * 1024 }  // 25GB
 	};
 	return plans[planKey] || plans.free;
+}
+
+/** Count extra team seats from subscription line items */
+function countExtraSeats(subscription: any): number {
+	const seatItem = subscription.items?.data?.find(
+		(item: any) => item.price?.metadata?.plan_key === 'team_seat'
+	);
+	return seatItem ? (seatItem.quantity || 0) : 0;
 }
 
 export const POST: RequestHandler = async ({ request, platform }) => {
@@ -52,10 +60,15 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 				);
 				const subscription = await subResponse.json();
 
+				// Find the base plan item (not the seat add-on)
+				const basePlanItem = subscription.items?.data?.find(
+					(item: any) => item.price?.metadata?.plan_key !== 'team_seat'
+				) || subscription.items?.data?.[0];
 				const planKey = subscription.metadata?.plan_key ||
-					subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'pro';
-				const billingInterval = subscription.items?.data?.[0]?.price?.metadata?.billing || 'monthly';
-				const limits = getPlanLimits(planKey);
+					basePlanItem?.price?.metadata?.plan_key || 'pro';
+				const billingInterval = basePlanItem?.price?.metadata?.billing || 'monthly';
+				const extraSeats = countExtraSeats(subscription);
+				const limits = getPlanLimits(planKey, extraSeats);
 
 				await db
 					.prepare(
@@ -87,10 +100,15 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 		case 'customer.subscription.updated': {
 			const subscription = event.data.object;
 			const customerId = subscription.customer;
+			// Find the base plan item (not the seat add-on)
+			const baseItem = subscription.items?.data?.find(
+				(item: any) => item.price?.metadata?.plan_key !== 'team_seat'
+			) || subscription.items?.data?.[0];
 			const planKey = subscription.metadata?.plan_key ||
-				subscription.items?.data?.[0]?.price?.metadata?.plan_key || 'pro';
-			const billingInterval = subscription.items?.data?.[0]?.price?.metadata?.billing || 'monthly';
-			const limits = getPlanLimits(planKey);
+				baseItem?.price?.metadata?.plan_key || 'pro';
+			const billingInterval = baseItem?.price?.metadata?.billing || 'monthly';
+			const extraSeats = countExtraSeats(subscription);
+			const limits = getPlanLimits(planKey, extraSeats);
 
 			await db
 				.prepare(

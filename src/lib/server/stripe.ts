@@ -14,6 +14,16 @@ export const STRIPE_PRICES = {
 	}
 } as const;
 
+// Additional Team Member seat prices ($15/mo or $150/yr per extra seat beyond 5)
+export const TEAM_SEAT_PRICES = {
+	monthly: 'price_1T9wqYAf5ZaWveKYJ8EdKCMy',
+	annual: 'price_1T9wqYAf5ZaWveKYVNzm473u'
+} as const;
+
+export const TEAM_INCLUDED_SEATS = 5;
+export const TEAM_SEAT_PRICE_MONTHLY = 15;
+export const TEAM_SEAT_PRICE_ANNUAL = 150;
+
 export type PlanKey = keyof typeof STRIPE_PRICES;
 export type BillingInterval = 'monthly' | 'annual';
 
@@ -107,6 +117,72 @@ export async function getSubscription(
 	subscriptionId: string
 ): Promise<any> {
 	return stripeRequest(secretKey, 'GET', `/subscriptions/${subscriptionId}`);
+}
+
+/** Update additional seat quantity on a Team subscription.
+ *  If extraSeats > 0 and no seat line item exists, adds one.
+ *  If extraSeats === 0 and a seat line item exists, removes it.
+ *  Otherwise updates the existing quantity. */
+export async function updateTeamSeats(
+	secretKey: string,
+	subscriptionId: string,
+	extraSeats: number
+): Promise<{ totalSeats: number; extraSeats: number }> {
+	// Fetch current subscription to find seat line item
+	const sub = await getSubscription(secretKey, subscriptionId);
+	const seatItem = sub.items?.data?.find(
+		(item: any) => item.price?.metadata?.plan_key === 'team_seat'
+	);
+
+	if (extraSeats > 0 && seatItem) {
+		// Update existing seat quantity
+		await stripeRequest(secretKey, 'POST', `/subscription_items/${seatItem.id}`, {
+			quantity: extraSeats.toString(),
+			proration_behavior: 'always_invoice'
+		});
+	} else if (extraSeats > 0 && !seatItem) {
+		// Add seat line item to subscription
+		const billing = sub.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 'annual' : 'monthly';
+		const seatPriceId = TEAM_SEAT_PRICES[billing];
+		await stripeRequest(secretKey, 'POST', '/subscription_items', {
+			subscription: subscriptionId,
+			price: seatPriceId,
+			quantity: extraSeats.toString(),
+			proration_behavior: 'always_invoice'
+		});
+	} else if (extraSeats === 0 && seatItem) {
+		// Remove seat line item
+		await stripeRequest(secretKey, 'DELETE', `/subscription_items/${seatItem.id}`, {
+			proration_behavior: 'always_invoice'
+		});
+	}
+
+	return {
+		totalSeats: TEAM_INCLUDED_SEATS + extraSeats,
+		extraSeats
+	};
+}
+
+/** Get current seat count for a Team subscription */
+export async function getTeamSeatCount(
+	secretKey: string,
+	subscriptionId: string
+): Promise<{ totalSeats: number; extraSeats: number; monthlyCost: number }> {
+	const sub = await getSubscription(secretKey, subscriptionId);
+	const seatItem = sub.items?.data?.find(
+		(item: any) => item.price?.metadata?.plan_key === 'team_seat'
+	);
+	const extraSeats = seatItem ? (seatItem.quantity || 0) : 0;
+	const billing = sub.items?.data?.[0]?.price?.recurring?.interval === 'year' ? 'annual' : 'monthly';
+	const seatCost = billing === 'annual'
+		? (TEAM_SEAT_PRICE_ANNUAL / 12) * extraSeats
+		: TEAM_SEAT_PRICE_MONTHLY * extraSeats;
+
+	return {
+		totalSeats: TEAM_INCLUDED_SEATS + extraSeats,
+		extraSeats,
+		monthlyCost: seatCost
+	};
 }
 
 /** Verify Stripe webhook signature */
