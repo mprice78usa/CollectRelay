@@ -42,7 +42,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			templates: mockTemplates,
 			userName: locals.user?.name || 'Dev User',
 			userCompany: null as string | null,
-			userPhone: null as string | null
+			userPhone: null as string | null,
+			industry: 'real_estate' as string
 		};
 	}
 
@@ -54,15 +55,47 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.bind(locals.user!.id)
 		.first<{ name: string; company: string | null; phone: string | null }>();
 
+	// Load workspace industry
+	const ws = await db
+		.prepare('SELECT industry FROM workspaces WHERE id = ?')
+		.bind(workspaceId)
+		.first<{ industry: string }>();
+
 	return {
 		templates,
 		userName: userRow?.name || locals.user!.name,
 		userCompany: userRow?.company || null,
-		userPhone: userRow?.phone || null
+		userPhone: userRow?.phone || null,
+		industry: ws?.industry || 'real_estate'
 	};
 };
 
 export const actions: Actions = {
+	setIndustry: async ({ request, locals, platform }) => {
+		const db = platform?.env?.DB;
+		const user = locals.user;
+
+		const formData = await request.formData();
+		const industry = (formData.get('industry') as string)?.trim();
+		const validIndustries = ['real_estate', 'contractors', 'accountants', 'hr', 'other'];
+
+		if (!industry || !validIndustries.includes(industry)) {
+			return fail(400, { error: 'Please select an industry', step: 1 });
+		}
+
+		if (!db || !user?.workspaceId) {
+			// Dev mode: skip DB write, just advance step
+			return { success: true, step: 2 };
+		}
+
+		await db
+			.prepare("UPDATE workspaces SET industry = ?, updated_at = datetime('now') WHERE id = ?")
+			.bind(industry, user.workspaceId)
+			.run();
+
+		return { success: true, step: 2 };
+	},
+
 	updateProfile: async ({ request, locals, platform }) => {
 		const db = platform?.env?.DB;
 		const user = locals.user;
@@ -70,8 +103,8 @@ export const actions: Actions = {
 			// Dev mode: skip DB write, just advance step
 			const formData = await request.formData();
 			const name = (formData.get('name') as string)?.trim();
-			if (!name) return fail(400, { error: 'Name is required', step: 1 });
-			return { success: true, step: 2 };
+			if (!name) return fail(400, { error: 'Name is required', step: 2 });
+			return { success: true, step: 3 };
 		}
 
 		const formData = await request.formData();
@@ -79,11 +112,11 @@ export const actions: Actions = {
 		const company = (formData.get('company') as string)?.trim() || undefined;
 		const phone = (formData.get('phone') as string)?.trim() || undefined;
 
-		if (!name) return fail(400, { error: 'Name is required', step: 1 });
+		if (!name) return fail(400, { error: 'Name is required', step: 2 });
 
 		await updateUser(db, user.id, { name, company, phone });
 
-		return { success: true, step: 2 };
+		return { success: true, step: 3 };
 	},
 
 	createFirstTransaction: async ({ request, locals, platform }) => {
@@ -101,13 +134,13 @@ export const actions: Actions = {
 		const title = (formData.get('title') as string)?.trim();
 
 		if (!templateId || !clientName || !clientEmail || !title) {
-			return fail(400, { error: 'All fields are required', step: 3 });
+			return fail(400, { error: 'All fields are required', step: 4 });
 		}
 
 		// Trial gate
 		const billing = await getBillingInfo(db, user.workspaceId);
 		if (billing.isTrialExpired && !billing.hasActiveSubscription) {
-			return fail(403, { error: 'trial_expired', step: 3 });
+			return fail(403, { error: 'trial_expired', step: 4 });
 		}
 
 		const transactionId = await createTransaction(db, {

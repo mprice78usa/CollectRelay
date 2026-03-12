@@ -15,26 +15,75 @@
 
 	const categoryLabels: Record<string, string> = {
 		'pre-approval': 'Pre-Approval',
+		'pre_approval': 'Pre-Approval',
 		purchase: 'Purchase',
 		refinance: 'Refinance',
 		seller: 'Seller',
+		project_setup: 'Project Setup',
+		sub_onboarding: 'Sub Onboarding',
+		draw_request: 'Draw Request',
+		tax_return: 'Tax Return',
+		client_onboarding: 'Client Onboarding',
+		financial_review: 'Financial Review',
+		new_hire: 'New Hire',
+		benefits: 'Benefits',
+		performance: 'Performance',
+		general: 'General',
+		intake: 'Intake',
 		custom: 'Custom'
 	};
 
 	const categoryVariants: Record<string, 'default' | 'success' | 'warning' | 'error' | 'info'> = {
 		'pre-approval': 'info',
+		'pre_approval': 'info',
 		purchase: 'success',
 		refinance: 'warning',
 		seller: 'default',
+		project_setup: 'info',
+		sub_onboarding: 'success',
+		draw_request: 'warning',
+		tax_return: 'info',
+		client_onboarding: 'success',
+		financial_review: 'warning',
+		new_hire: 'info',
+		benefits: 'success',
+		performance: 'warning',
+		general: 'default',
+		intake: 'info',
 		custom: 'default'
+	};
+
+	const industryCategories: Record<string, Array<{ label: string; value: string }>> = {
+		real_estate: [
+			{ label: 'Pre-Approval', value: 'pre-approval' },
+			{ label: 'Purchase', value: 'purchase' },
+			{ label: 'Refinance', value: 'refinance' },
+			{ label: 'Seller', value: 'seller' },
+		],
+		contractors: [
+			{ label: 'Project Setup', value: 'project_setup' },
+			{ label: 'Sub Onboarding', value: 'sub_onboarding' },
+			{ label: 'Draw Request', value: 'draw_request' },
+		],
+		accountants: [
+			{ label: 'Tax Return', value: 'tax_return' },
+			{ label: 'Client Onboarding', value: 'client_onboarding' },
+			{ label: 'Financial Review', value: 'financial_review' },
+		],
+		hr: [
+			{ label: 'New Hire', value: 'new_hire' },
+			{ label: 'Benefits', value: 'benefits' },
+			{ label: 'Performance', value: 'performance' },
+		],
+		other: [
+			{ label: 'General', value: 'general' },
+			{ label: 'Intake', value: 'intake' },
+		],
 	};
 
 	const categoryTabs = [
 		{ label: 'All', value: 'all' },
-		{ label: 'Pre-Approval', value: 'pre-approval' },
-		{ label: 'Purchase', value: 'purchase' },
-		{ label: 'Refinance', value: 'refinance' },
-		{ label: 'Seller', value: 'seller' },
+		...(industryCategories[data.industry] || []),
 		{ label: 'Custom', value: 'custom' }
 	];
 
@@ -178,10 +227,9 @@
 			<label for="category">Category</label>
 			<select id="category" name="category">
 				<option value="custom">Custom</option>
-				<option value="pre-approval">Pre-Approval</option>
-				<option value="purchase">Purchase</option>
-				<option value="refinance">Refinance</option>
-				<option value="seller">Seller</option>
+				{#each (industryCategories[data.industry] || []) as cat}
+					<option value={cat.value}>{cat.label}</option>
+				{/each}
 			</select>
 		</div>
 

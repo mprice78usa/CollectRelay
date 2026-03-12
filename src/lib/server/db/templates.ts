@@ -191,12 +191,13 @@ export async function deleteTemplateItem(db: D1Database, itemId: string): Promis
 export async function cloneStarterTemplates(
 	db: D1Database,
 	workspaceId: string,
-	userId: string
+	userId: string,
+	industry: string = 'real_estate'
 ): Promise<void> {
-	// Get all system default templates
+	// Get system default templates for this industry
 	const defaults = await db
-		.prepare('SELECT * FROM templates WHERE workspace_id = ? AND is_default = 1')
-		.bind('system')
+		.prepare('SELECT * FROM templates WHERE workspace_id = ? AND is_default = 1 AND (industry = ? OR industry IS NULL)')
+		.bind('system', industry)
 		.all<DbTemplate>();
 
 	if (defaults.results.length === 0) return;

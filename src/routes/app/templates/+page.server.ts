@@ -55,11 +55,18 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				updated_at: '2026-03-01T11:00:00Z'
 			}
 		];
-		return { templates: mockTemplates };
+		return { templates: mockTemplates, industry: 'real_estate' as string };
 	}
 
 	const templates = await getTemplatesForWorkspace(db, workspaceId);
-	return { templates };
+
+	// Load workspace industry for category tabs
+	const ws = await db
+		.prepare('SELECT industry FROM workspaces WHERE id = ?')
+		.bind(workspaceId)
+		.first<{ industry: string }>();
+
+	return { templates, industry: ws?.industry || 'real_estate' };
 };
 
 export const actions: Actions = {

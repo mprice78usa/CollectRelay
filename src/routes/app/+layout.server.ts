@@ -15,7 +15,9 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 	if (db && user.workspaceId) {
 		const hasTemplates = await workspaceHasTemplates(db, user.workspaceId);
 		if (!hasTemplates) {
-			await cloneStarterTemplates(db, user.workspaceId, user.id);
+			const ws = await db.prepare('SELECT industry FROM workspaces WHERE id = ?')
+				.bind(user.workspaceId).first<{ industry: string }>();
+			await cloneStarterTemplates(db, user.workspaceId, user.id, ws?.industry || 'real_estate');
 		}
 	}
 
