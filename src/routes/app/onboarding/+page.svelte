@@ -316,11 +316,9 @@
 
 			<form method="POST" action="?/createFirstTransaction" use:enhance={() => {
 				loading = true;
-				return async ({ result, update }) => {
+				return async ({ update }) => {
 					loading = false;
-					if (result.type !== 'redirect') {
-						await update();
-					}
+					await update();
 				};
 			}}>
 				<input type="hidden" name="templateId" value={selectedTemplateId} />
