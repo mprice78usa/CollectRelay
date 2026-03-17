@@ -28,7 +28,7 @@
 
 		<section class="features-section">
 			<h2 class="section-title">Built for the Field-to-Office Gap</h2>
-			<p class="section-sub">Real estate agents deal with PDFs. Contractors deal with chaos. CollectRelay bridges the gap.</p>
+			<p class="section-sub">From submittals to closeout, CollectRelay keeps every project document organized and on schedule.</p>
 
 			<div class="features-grid">
 				<div class="feature-card">
@@ -156,7 +156,7 @@
 						</svg>
 					</div>
 					<h3>Pipeline & Reports</h3>
-					<p>Pipeline funnel, commission tracking, completion metrics, and activity trends. Export all data to CSV for external analysis.</p>
+					<p>Pipeline funnel, project cost tracking, completion metrics, and activity trends. Export all data to CSV for external analysis.</p>
 				</div>
 				<div class="feature-card">
 					<div class="feature-icon purple">

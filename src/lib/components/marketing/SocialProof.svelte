@@ -1,6 +1,6 @@
 <section class="social-proof">
 	<div class="container">
-		<p>Trusted by professionals who refuse to chase paperwork.</p>
+		<p>Built for professionals who refuse to chase paperwork.</p>
 	</div>
 </section>
 

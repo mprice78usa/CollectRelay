@@ -21,7 +21,7 @@
 				professional project logs, punch lists, and change orders — all from your phone.
 			</p>
 			<div class="hero-actions">
-				<a href="/register" class="btn-primary">Start Your 14-Day Pro Trial</a>
+				<a href="/register" class="btn-primary">Start Free</a>
 				<a href="/pricing" class="btn-secondary">View Pricing</a>
 			</div>
 		</section>
@@ -278,9 +278,9 @@
 		<!-- CTA -->
 		<section class="cta-section">
 			<h2>Ready to Close the Field-to-Office Gap?</h2>
-			<p>Start your free 14-day Pro trial. No credit card required.</p>
+			<p>Start free — no credit card required. Upgrade when you're ready.</p>
 			<div class="cta-actions">
-				<a href="/register" class="btn-primary">Start Your Pro Trial</a>
+				<a href="/register" class="btn-primary">Get started free</a>
 				<a href="/pricing" class="btn-outline">View Pricing</a>
 			</div>
 		</section>

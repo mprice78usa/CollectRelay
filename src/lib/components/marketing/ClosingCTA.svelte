@@ -3,8 +3,17 @@
 		<h2>Ready to stop chasing documents?</h2>
 		<p>Send requests. Collect files. Stay on track.</p>
 		<div class="cta-actions">
-			<a href="/register" class="btn-primary">Get started</a>
-			<a href="mailto:info@collectrelay.com" class="btn-secondary">Book a demo</a>
+			<a href="/register" class="btn-primary">Get started free</a>
+			<a href="mailto:info@collectrelay.com" class="btn-secondary">Contact us</a>
+		</div>
+		<div class="trust-signals">
+			<span>No credit card required</span>
+			<span class="dot"></span>
+			<span>No client accounts needed</span>
+			<span class="dot"></span>
+			<span>Encrypted in transit &amp; at rest</span>
+			<span class="dot"></span>
+			<span>Full audit trail</span>
 		</div>
 	</div>
 </section>
@@ -74,5 +83,27 @@
 	.btn-secondary:hover {
 		color: var(--text-primary);
 		border-color: var(--text-muted);
+	}
+
+	.trust-signals {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-md);
+		margin-top: var(--space-xxl);
+		flex-wrap: wrap;
+	}
+
+	.trust-signals span {
+		color: var(--text-muted);
+		font-size: var(--font-size-sm);
+	}
+
+	.trust-signals .dot {
+		width: 4px;
+		height: 4px;
+		background: var(--text-muted);
+		border-radius: 50%;
+		opacity: 0.5;
 	}
 </style>

@@ -97,16 +97,16 @@
 	];
 
 	const featureRows = [
-		{ key: 'transactions', label: 'Transactions' },
-		{ key: 'templates', label: 'Templates' },
-		{ key: 'aiSummaries', label: 'AI summaries' },
-		{ key: 'eSignatures', label: 'E-signatures' },
-		{ key: 'webhooks', label: 'Webhooks' },
-		{ key: 'teamMembers', label: 'Team members' },
-		{ key: 'whiteLabel', label: 'White-label' },
-		{ key: 'partnerAccess', label: 'Partner access' },
-		{ key: 'prioritySupport', label: 'Priority support' },
-		{ key: 'zapierApi', label: 'Zapier/API' }
+		{ key: 'transactions', label: 'Transactions', hint: 'Active deals you can manage at once' },
+		{ key: 'templates', label: 'Templates', hint: 'Reusable checklists for new deals' },
+		{ key: 'aiSummaries', label: 'AI summaries', hint: 'Auto-summarize uploaded documents' },
+		{ key: 'eSignatures', label: 'E-signatures', hint: 'Collect signatures in the client portal' },
+		{ key: 'webhooks', label: 'Webhooks', hint: 'Trigger events in your CRM or tools' },
+		{ key: 'teamMembers', label: 'Team members', hint: 'Users in your workspace' },
+		{ key: 'whiteLabel', label: 'White-label', hint: 'Your branding in the client portal' },
+		{ key: 'partnerAccess', label: 'Partner access', hint: 'Invite agents or subs with limited access' },
+		{ key: 'prioritySupport', label: 'Priority support', hint: 'Faster response from our team' },
+		{ key: 'zapierApi', label: 'Zapier/API', hint: 'Connect CollectRelay to your systems' }
 	];
 
 	function displayPrice(plan: typeof plans[0]) {
@@ -263,7 +263,12 @@
 					<tbody>
 						{#each featureRows as row}
 							<tr>
-								<td class="feature-label">{row.label}</td>
+								<td class="feature-label">
+									{row.label}
+									{#if row.hint}
+										<span class="feature-hint">{row.hint}</span>
+									{/if}
+								</td>
 								{#each plans as plan}
 									{@const val = plan.features[row.key as keyof typeof plan.features]}
 									<td class="feature-value" class:highlight={plan.popular}>
@@ -629,6 +634,14 @@
 		font-size: var(--font-size-sm);
 		font-weight: 500;
 		color: var(--text-secondary);
+	}
+
+	.feature-hint {
+		display: block;
+		font-size: var(--font-size-xs);
+		font-weight: 400;
+		color: var(--text-muted);
+		margin-top: 2px;
 	}
 
 	.feature-value {

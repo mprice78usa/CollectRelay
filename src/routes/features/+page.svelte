@@ -233,31 +233,8 @@
 						</svg>
 					</div>
 					<h3>Security &amp; Encryption</h3>
-					<p>End-to-end encryption for all uploads. Files stored on Cloudflare R2 with signed URLs. Session-based auth, rate limiting, and comprehensive audit trails.</p>
+					<p>Encrypted in transit (TLS 1.3) and at rest. Files stored on Cloudflare R2 with signed URLs. Session-based auth, rate limiting, and comprehensive audit trails.</p>
 				</div>
-			</div>
-		</div>
-	</section>
-
-	<!-- Download Walkthrough -->
-	<section class="download-section">
-		<div class="container">
-			<div class="download-card">
-				<div class="download-content">
-					<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="var(--color-accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
-					</svg>
-					<div>
-						<h3>Download the full walkthrough</h3>
-						<p>Get the complete platform walkthrough as a PowerPoint presentation — perfect for sharing with your team or reviewing offline.</p>
-					</div>
-				</div>
-				<a href="/CollectRelay-Walkthrough.pptx" class="btn-download" download>
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-					</svg>
-					Download PPTX
-				</a>
 			</div>
 		</div>
 	</section>
@@ -266,7 +243,7 @@
 	<section class="cta-section">
 		<div class="container">
 			<h2>Ready to simplify your document collection?</h2>
-			<p>Start your 14-day free trial. No credit card required.</p>
+			<p>Start free — no credit card required. Upgrade when you're ready.</p>
 			<div class="cta-actions">
 				<a href="/register" class="btn-primary">Get started free</a>
 				<a href="/pricing" class="btn-secondary">View pricing</a>
@@ -411,68 +388,6 @@
 		margin: 0;
 	}
 
-	/* Download Section */
-	.download-section {
-		padding: var(--space-4xl) 0;
-	}
-
-	.download-card {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: var(--space-xxl);
-		padding: var(--space-xxl) var(--space-3xl);
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-xl);
-	}
-
-	.download-content {
-		display: flex;
-		align-items: center;
-		gap: var(--space-xl);
-	}
-
-	.download-content svg {
-		flex-shrink: 0;
-	}
-
-	.download-content h3 {
-		font-size: var(--font-size-lg);
-		font-weight: 600;
-		color: var(--text-primary);
-		margin: 0 0 var(--space-xs);
-	}
-
-	.download-content p {
-		font-size: var(--font-size-md);
-		color: var(--text-secondary);
-		margin: 0;
-		max-width: 500px;
-	}
-
-	.btn-download {
-		display: inline-flex;
-		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-md) var(--space-xl);
-		background: var(--bg-tertiary);
-		color: var(--text-primary);
-		font-size: var(--font-size-sm);
-		font-weight: 600;
-		border-radius: var(--radius-md);
-		border: 1px solid var(--border-color);
-		transition: all var(--transition-fast);
-		white-space: nowrap;
-		flex-shrink: 0;
-	}
-
-	.btn-download:hover {
-		background: var(--bg-elevated);
-		color: var(--text-primary);
-		border-color: var(--border-color-light);
-	}
-
 	/* CTA */
 	.cta-section {
 		text-align: center;
@@ -541,18 +456,6 @@
 	@media (max-width: 900px) {
 		.grid-3 {
 			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media (max-width: 768px) {
-		.download-card {
-			flex-direction: column;
-			text-align: center;
-			padding: var(--space-xxl);
-		}
-
-		.download-content {
-			flex-direction: column;
 		}
 	}
 

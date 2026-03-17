@@ -53,6 +53,61 @@
 				<p>Accept, reject, or request a fix. Track every change with a full timeline.</p>
 			</div>
 		</div>
+
+		<div class="workflow-strip">
+			<div class="workflow-step">
+				<div class="workflow-icon">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/>
+					</svg>
+				</div>
+				<span>Create a checklist</span>
+			</div>
+			<div class="workflow-arrow" aria-hidden="true">
+				<svg viewBox="0 0 16 8" width="16" height="8"><path d="M0 4h12l-3-3M12 4l-3 3" stroke="var(--text-muted)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+			</div>
+			<div class="workflow-step">
+				<div class="workflow-icon">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4z"/>
+					</svg>
+				</div>
+				<span>Send a magic link</span>
+			</div>
+			<div class="workflow-arrow" aria-hidden="true">
+				<svg viewBox="0 0 16 8" width="16" height="8"><path d="M0 4h12l-3-3M12 4l-3 3" stroke="var(--text-muted)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+			</div>
+			<div class="workflow-step">
+				<div class="workflow-icon">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+					</svg>
+				</div>
+				<span>Client uploads &amp; signs</span>
+			</div>
+			<div class="workflow-arrow" aria-hidden="true">
+				<svg viewBox="0 0 16 8" width="16" height="8"><path d="M0 4h12l-3-3M12 4l-3 3" stroke="var(--text-muted)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+			</div>
+			<div class="workflow-step">
+				<div class="workflow-icon">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+					</svg>
+				</div>
+				<span>Review &amp; request fixes</span>
+			</div>
+			<div class="workflow-arrow" aria-hidden="true">
+				<svg viewBox="0 0 16 8" width="16" height="8"><path d="M0 4h12l-3-3M12 4l-3 3" stroke="var(--text-muted)" stroke-width="1" fill="none" stroke-linecap="round"/></svg>
+			</div>
+			<div class="workflow-step">
+				<div class="workflow-icon">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+					</svg>
+				</div>
+				<span>Close the deal</span>
+			</div>
+		</div>
 	</div>
 </section>
 
@@ -134,6 +189,49 @@
 		padding-top: 88px;
 	}
 
+	.workflow-strip {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-md);
+		margin-top: var(--space-4xl);
+		padding: var(--space-xl) var(--space-xxl);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-xl);
+		flex-wrap: wrap;
+	}
+
+	.workflow-step {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+
+	.workflow-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		background: var(--color-accent-bg);
+		border-radius: var(--radius-md);
+		color: var(--color-accent);
+		flex-shrink: 0;
+	}
+
+	.workflow-step span {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--text-secondary);
+		white-space: nowrap;
+	}
+
+	.workflow-arrow {
+		color: var(--text-muted);
+		flex-shrink: 0;
+	}
+
 	@media (max-width: 768px) {
 		.steps {
 			flex-direction: column;
@@ -146,6 +244,16 @@
 
 		.step {
 			max-width: 400px;
+		}
+
+		.workflow-strip {
+			flex-direction: column;
+			padding: var(--space-lg);
+			gap: var(--space-sm);
+		}
+
+		.workflow-arrow {
+			transform: rotate(90deg);
 		}
 	}
 </style>

@@ -1,7 +1,7 @@
 <section class="security" id="security">
 	<div class="container-narrow">
 		<h2>Security and privacy are built in</h2>
-		<p class="subtitle">Your sensitive documents are protected by enterprise-grade security at every layer.</p>
+		<p class="subtitle">Your sensitive documents are protected by layered security controls at every level.</p>
 
 		<div class="security-grid">
 			<div class="security-item">

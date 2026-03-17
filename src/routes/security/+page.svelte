@@ -5,7 +5,7 @@
 
 <svelte:head>
 	<title>Security — CollectRelay</title>
-	<meta name="description" content="How CollectRelay protects your sensitive documents with encryption, access controls, and enterprise-grade infrastructure." />
+	<meta name="description" content="How CollectRelay protects your sensitive documents with encryption, access controls, and layered security infrastructure." />
 </svelte:head>
 
 <Navbar />
@@ -257,7 +257,7 @@
 			<p>We take security seriously and are happy to discuss our practices in detail.</p>
 			<div class="cta-buttons">
 				<a href="mailto:security@collectrelay.com" class="btn-primary">Contact security team</a>
-				<a href="/register" class="btn-outline">Get started</a>
+				<a href="/register" class="btn-outline">Get started free</a>
 			</div>
 		</section>
 	</div>

@@ -101,7 +101,7 @@
 
 		<div class="nav-actions">
 			<a href="/login" class="nav-link-login">Log in</a>
-			<a href="/register" class="btn-primary-sm">Get started</a>
+			<a href="/register" class="btn-primary-sm">Get started free</a>
 		</div>
 
 		<button class="mobile-toggle" onclick={() => mobileOpen = !mobileOpen} aria-label="Toggle menu">
