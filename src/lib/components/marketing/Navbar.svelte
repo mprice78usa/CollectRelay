@@ -80,17 +80,11 @@
 							</svg>
 							Contractors
 						</a>
-						<a href="/industries/accountants" onclick={closeAll}>
+						<a href="/pro" onclick={closeAll}>
 							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-								<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+								<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
 							</svg>
-							Accountants
-						</a>
-						<a href="/industries/hr" onclick={closeAll}>
-							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-							</svg>
-							Human Resources
+							Pro (AI Tools)
 						</a>
 					</div>
 				{/if}

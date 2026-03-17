@@ -1,17 +1,20 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { getTerms } from '$lib/terminology';
 
 	let { data, children } = $props();
 
-	const navItems = [
+	let terms = $derived(getTerms(data.industry));
+
+	let navItems = $derived([
 		{ href: '/app', label: 'Dashboard', exact: true, icon: 'dashboard' },
-		{ href: '/app/transactions', label: 'Transactions', exact: false, icon: 'transactions' },
+		{ href: '/app/transactions', label: terms.transactions, exact: false, icon: 'transactions' },
 		{ href: '/app/notifications', label: 'Activity', exact: false, icon: 'activity' },
 		{ href: '/app/templates', label: 'Templates', exact: false, icon: 'templates' },
 		{ href: '/app/documents', label: 'Documents', exact: false, icon: 'documents' },
 		{ href: '/app/reports', label: 'Reports', exact: false, icon: 'reports' },
 		{ href: '/app/settings', label: 'Settings', exact: false, icon: 'settings' }
-	];
+	]);
 
 	function isActive(href: string, exact: boolean): boolean {
 		if (exact) return page.url.pathname === href;
@@ -22,9 +25,10 @@
 	let isAdmin = $derived(data.isAdmin);
 	let totalUnseenCount = $derived(data.totalUnseenCount || 0);
 	let unreadNotificationCount = $derived(data.unreadNotificationCount || 0);
+	let isOnboarding = $derived(page.url.pathname.startsWith('/app/onboarding'));
 </script>
 
-<div class="app-shell">
+<div class="app-shell" class:onboarding-mode={isOnboarding}>
 	<aside class="sidebar">
 		<div class="sidebar-header">
 			<a href="/" class="logo">
@@ -270,6 +274,10 @@
 	.trial-banner.expired .trial-cta {
 		color: #f59e0b;
 	}
+
+	/* Hide sidebar during onboarding */
+	.app-shell.onboarding-mode .sidebar { display: none; }
+	.app-shell.onboarding-mode .content { margin-left: 0; max-width: 100%; padding: 0; }
 
 	@media (max-width: 768px) {
 		.sidebar { display: none; }

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
+	import { getTerms } from '$lib/terminology';
 
 	let { data } = $props();
+
+	let terms = $derived(getTerms(data.industry));
 
 	const statusConfig: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'error' | 'info' }> = {
 		active: { label: 'Active', variant: 'success' },
@@ -12,16 +15,16 @@
 		draft: { label: 'Draft', variant: 'default' }
 	};
 
-	const actionLabels: Record<string, string> = {
+	let actionLabels = $derived<Record<string, string>>({
 		file_uploaded: 'uploaded a file',
-		item_accepted: 'accepted an item',
-		item_rejected: 'rejected an item',
-		item_waived: 'waived an item',
+		item_accepted: `accepted an ${terms.item.toLowerCase()}`,
+		item_rejected: `rejected an ${terms.item.toLowerCase()}`,
+		item_waived: `waived an ${terms.item.toLowerCase()}`,
 		answer_submitted: 'submitted an answer',
 		magic_link_sent: 'sent a client link',
 		status_changed: 'changed status',
-		transaction_created: 'created transaction'
-	};
+		transaction_created: `created ${terms.transaction.toLowerCase()}`
+	});
 
 	const actionIcons: Record<string, { path: string; color: string }> = {
 		file_uploaded: { path: 'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4 M17 8l-5-5-5 5 M12 3v12', color: '#3b82f6' },
@@ -88,6 +91,398 @@
 
 		return 'green';
 	}
+
+	// Quick Add state
+	let showQuickAdd = $state(false);
+	type QuickAddTab = 'voice' | 'text' | 'photo';
+	let quickAddTab = $state<QuickAddTab>('voice');
+	type QuickAddStep = 'input' | 'assign' | 'processing' | 'review' | 'success' | 'error';
+	let quickAddStep = $state<QuickAddStep>('input');
+
+	// Voice recording state (for Quick Add)
+	let qaRecordingDuration = $state(0);
+	let qaRecordingTimer: ReturnType<typeof setInterval> | null = null;
+	let qaMediaRecorder: MediaRecorder | null = null;
+	let qaAudioChunks: Blob[] = [];
+	let qaAudioBlob = $state<Blob | null>(null);
+	let qaVoiceNoteId = $state<string | null>(null);
+	let qaVoiceResult = $state<{ transcript: string; actions: any } | null>(null);
+	let qaVoiceError = $state<string | null>(null);
+	let qaPollingTimer: ReturnType<typeof setInterval> | null = null;
+	let qaRelayLoading = $state(false);
+	let qaSelectedActions = $state<Set<number>>(new Set());
+	let qaEditableActions = $state<Array<{ task: string; priority: string }>>([]);
+	let qaEditableSummary = $state('');
+	let qaIsRecording = $state(false);
+
+	// Text note state
+	let textTitle = $state('');
+	let textContent = $state('');
+	let textDestination = $state<'project' | 'library'>('project');
+	let textSaving = $state(false);
+
+	// Photo note state
+	let qaPhotoFile = $state<File | null>(null);
+	let qaPhotoPreview = $state<string | null>(null);
+	let qaPhotoTitle = $state('');
+	let qaPhotoNotes = $state('');
+	let qaPhotoAnalyze = $state(false);
+	let qaPhotoNoteId = $state<string | null>(null);
+	let qaPhotoResult = $state<{ ai_description: string; actions: any } | null>(null);
+	let qaPhotoError = $state<string | null>(null);
+	let qaPhotoUploading = $state(false);
+	let qaPhotoPollingTimer: ReturnType<typeof setInterval> | null = null;
+
+	// Shared
+	let selectedTransactionId = $state('');
+	let qaSuccessMessage = $state('');
+
+	function openQuickAdd() {
+		showQuickAdd = true;
+		quickAddTab = 'voice';
+		quickAddStep = 'input';
+		resetQuickAdd();
+	}
+
+	function resetQuickAdd() {
+		qaRecordingDuration = 0;
+		qaAudioBlob = null;
+		qaVoiceNoteId = null;
+		qaVoiceResult = null;
+		qaVoiceError = null;
+		qaIsRecording = false;
+		qaEditableActions = [];
+		qaEditableSummary = '';
+		qaSelectedActions = new Set();
+		qaRelayLoading = false;
+		textTitle = '';
+		textContent = '';
+		textDestination = 'project';
+		textSaving = false;
+		qaPhotoFile = null;
+		qaPhotoPreview = null;
+		qaPhotoTitle = '';
+		qaPhotoNotes = '';
+		qaPhotoAnalyze = false;
+		qaPhotoNoteId = null;
+		qaPhotoResult = null;
+		qaPhotoError = null;
+		qaPhotoUploading = false;
+		if (qaPhotoPollingTimer) { clearInterval(qaPhotoPollingTimer); qaPhotoPollingTimer = null; }
+		selectedTransactionId = '';
+		qaSuccessMessage = '';
+		if (qaRecordingTimer) { clearInterval(qaRecordingTimer); qaRecordingTimer = null; }
+		if (qaPollingTimer) { clearInterval(qaPollingTimer); qaPollingTimer = null; }
+	}
+
+	function closeQuickAdd() {
+		if (qaMediaRecorder && qaMediaRecorder.state === 'recording') {
+			qaMediaRecorder.stop();
+		}
+		resetQuickAdd();
+		showQuickAdd = false;
+	}
+
+	async function qaStartRecording() {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			qaAudioChunks = [];
+			qaMediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+			qaMediaRecorder.ondataavailable = (e) => {
+				if (e.data.size > 0) qaAudioChunks.push(e.data);
+			};
+			qaMediaRecorder.onstop = () => {
+				stream.getTracks().forEach(t => t.stop());
+				if (qaRecordingTimer) { clearInterval(qaRecordingTimer); qaRecordingTimer = null; }
+				qaAudioBlob = new Blob(qaAudioChunks, { type: 'audio/webm' });
+				qaIsRecording = false;
+				quickAddStep = 'assign';
+			};
+			qaMediaRecorder.start(250);
+			qaIsRecording = true;
+			qaRecordingDuration = 0;
+			qaRecordingTimer = setInterval(() => {
+				qaRecordingDuration++;
+				if (qaRecordingDuration >= 120) qaStopRecording();
+			}, 1000);
+		} catch {
+			qaVoiceError = 'Microphone access denied.';
+			quickAddStep = 'error';
+		}
+	}
+
+	function qaStopRecording() {
+		if (qaMediaRecorder && qaMediaRecorder.state === 'recording') {
+			qaMediaRecorder.stop();
+		}
+	}
+
+	async function qaUploadAndProcess() {
+		if (!qaAudioBlob || !selectedTransactionId) return;
+		quickAddStep = 'processing';
+
+		try {
+			const formData = new FormData();
+			formData.append('audio', qaAudioBlob, 'recording.webm');
+			formData.append('transactionId', selectedTransactionId);
+			formData.append('duration', qaRecordingDuration.toString());
+
+			const res = await fetch('/api/voice-note', { method: 'POST', body: formData });
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({ message: 'Upload failed' }));
+				throw new Error(err.message || 'Upload failed');
+			}
+			const result = await res.json();
+			qaVoiceNoteId = result.id;
+			qaStartPolling();
+		} catch (err: any) {
+			qaVoiceError = err.message || 'Upload failed';
+			quickAddStep = 'error';
+		}
+	}
+
+	function qaStartPolling() {
+		let elapsed = 0;
+		qaPollingTimer = setInterval(async () => {
+			elapsed += 2;
+			if (elapsed > 60 || !qaVoiceNoteId) {
+				if (qaPollingTimer) clearInterval(qaPollingTimer);
+				qaVoiceError = 'Processing timed out.';
+				quickAddStep = 'error';
+				return;
+			}
+			try {
+				const res = await fetch(`/api/voice-note/${qaVoiceNoteId}`);
+				if (!res.ok) return;
+				const d = await res.json();
+				if (d.status === 'completed') {
+					if (qaPollingTimer) clearInterval(qaPollingTimer);
+					qaVoiceResult = { transcript: d.transcript, actions: d.actions };
+					qaEditableActions = (d.actions?.new_actions || []).map((a: any) => ({ task: a.task, priority: a.priority || 'Medium' }));
+					qaEditableSummary = d.actions?.summary || '';
+					qaSelectedActions = new Set(qaEditableActions.map((_: any, i: number) => i));
+					quickAddStep = 'review';
+				} else if (d.status === 'failed') {
+					if (qaPollingTimer) clearInterval(qaPollingTimer);
+					qaVoiceError = 'Processing failed.';
+					quickAddStep = 'error';
+				}
+			} catch { /* keep polling */ }
+		}, 2000);
+	}
+
+	function qaAddAction() {
+		qaEditableActions = [...qaEditableActions, { task: '', priority: 'Medium' }];
+		qaSelectedActions = new Set([...qaSelectedActions, qaEditableActions.length - 1]);
+	}
+
+	function qaRemoveAction(index: number) {
+		qaEditableActions = qaEditableActions.filter((_, i) => i !== index);
+		const next = new Set<number>();
+		for (const i of qaSelectedActions) {
+			if (i < index) next.add(i);
+			else if (i > index) next.add(i - 1);
+		}
+		qaSelectedActions = next;
+	}
+
+	async function qaRelayActions() {
+		if (!qaVoiceNoteId || qaEditableActions.length === 0) return;
+		qaRelayLoading = true;
+
+		const actions = qaEditableActions
+			.filter((_, i) => qaSelectedActions.has(i))
+			.filter(a => a.task.trim());
+
+		if (actions.length === 0) {
+			qaRelayLoading = false;
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/voice-note/${qaVoiceNoteId}/relay`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ actions, summary: qaEditableSummary })
+			});
+			if (res.ok) {
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `${actions.length} task${actions.length === 1 ? '' : 's'} added to ${txnName}`;
+				quickAddStep = 'success';
+			} else {
+				qaVoiceError = 'Failed to relay actions';
+				quickAddStep = 'error';
+			}
+		} catch {
+			qaVoiceError = 'Failed to relay actions';
+			quickAddStep = 'error';
+		}
+		qaRelayLoading = false;
+	}
+
+	async function saveTextNote() {
+		if (!textTitle.trim()) return;
+		textSaving = true;
+
+		try {
+			const body: any = {
+				destination: textDestination,
+				title: textTitle.trim(),
+				content: textContent.trim()
+			};
+			if (textDestination === 'project') {
+				if (!selectedTransactionId) { textSaving = false; return; }
+				body.transactionId = selectedTransactionId;
+			}
+
+			const res = await fetch('/api/text-note', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+
+			if (res.ok) {
+				if (textDestination === 'project') {
+					const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+					qaSuccessMessage = `Note added to ${txnName}`;
+				} else {
+					qaSuccessMessage = 'Note saved to Document Library';
+				}
+				quickAddStep = 'success';
+			} else {
+				qaVoiceError = 'Failed to save note';
+				quickAddStep = 'error';
+			}
+		} catch {
+			qaVoiceError = 'Failed to save note';
+			quickAddStep = 'error';
+		}
+		textSaving = false;
+	}
+
+	function qaHandlePhotoSelect(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+		qaPhotoFile = file;
+		qaPhotoTitle = file.name.replace(/\.[^.]+$/, '');
+		const reader = new FileReader();
+		reader.onload = () => { qaPhotoPreview = reader.result as string; };
+		reader.readAsDataURL(file);
+	}
+
+	function qaRemovePhoto() {
+		qaPhotoFile = null;
+		qaPhotoPreview = null;
+		qaPhotoTitle = '';
+		qaPhotoNotes = '';
+	}
+
+	async function qaUploadPhoto() {
+		if (!qaPhotoFile || !selectedTransactionId) return;
+		qaPhotoUploading = true;
+		qaPhotoError = null;
+
+		try {
+			const formData = new FormData();
+			formData.append('photo', qaPhotoFile);
+			formData.append('transactionId', selectedTransactionId);
+			if (qaPhotoTitle.trim()) formData.append('title', qaPhotoTitle.trim());
+			if (qaPhotoNotes.trim()) formData.append('notes', qaPhotoNotes.trim());
+			formData.append('analyzeWithAI', qaPhotoAnalyze.toString());
+
+			const res = await fetch('/api/photo-note', { method: 'POST', body: formData });
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({ message: 'Upload failed' }));
+				throw new Error(err.message || 'Upload failed');
+			}
+			const result = await res.json();
+			qaPhotoNoteId = result.id;
+
+			if (qaPhotoAnalyze) {
+				quickAddStep = 'processing';
+				qaStartPhotoPolling();
+			} else {
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `Photo added to ${txnName}`;
+				quickAddStep = 'success';
+			}
+		} catch (err: any) {
+			qaPhotoError = err.message || 'Upload failed';
+			quickAddStep = 'error';
+		}
+		qaPhotoUploading = false;
+	}
+
+	function qaStartPhotoPolling() {
+		let elapsed = 0;
+		qaPhotoPollingTimer = setInterval(async () => {
+			elapsed += 2;
+			if (elapsed > 60 || !qaPhotoNoteId) {
+				if (qaPhotoPollingTimer) clearInterval(qaPhotoPollingTimer);
+				qaPhotoError = 'Processing timed out.';
+				quickAddStep = 'error';
+				return;
+			}
+			try {
+				const res = await fetch(`/api/photo-note/${qaPhotoNoteId}`);
+				if (!res.ok) return;
+				const d = await res.json();
+				if (d.status === 'completed') {
+					if (qaPhotoPollingTimer) clearInterval(qaPhotoPollingTimer);
+					qaPhotoResult = { ai_description: d.ai_description, actions: d.actions };
+					qaEditableActions = (d.actions?.new_actions || []).map((a: any) => ({ task: a.task, priority: a.priority || 'Medium' }));
+					qaEditableSummary = d.actions?.summary || '';
+					qaSelectedActions = new Set(qaEditableActions.map((_: any, i: number) => i));
+					quickAddStep = 'review';
+				} else if (d.status === 'failed') {
+					if (qaPhotoPollingTimer) clearInterval(qaPhotoPollingTimer);
+					qaPhotoError = 'AI analysis failed.';
+					quickAddStep = 'error';
+				}
+			} catch { /* keep polling */ }
+		}, 2000);
+	}
+
+	async function qaRelayPhotoActions() {
+		if (!qaPhotoNoteId || qaEditableActions.length === 0) return;
+		qaRelayLoading = true;
+
+		const actions = qaEditableActions
+			.filter((_, i) => qaSelectedActions.has(i))
+			.filter(a => a.task.trim());
+
+		if (actions.length === 0) {
+			qaRelayLoading = false;
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/photo-note/${qaPhotoNoteId}/relay`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ actions, summary: qaEditableSummary })
+			});
+			if (res.ok) {
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `${actions.length} task${actions.length === 1 ? '' : 's'} added to ${txnName}`;
+				quickAddStep = 'success';
+			} else {
+				qaPhotoError = 'Failed to relay actions';
+				quickAddStep = 'error';
+			}
+		} catch {
+			qaPhotoError = 'Failed to relay actions';
+			quickAddStep = 'error';
+		}
+		qaRelayLoading = false;
+	}
+
+	function formatDuration(seconds: number): string {
+		const m = Math.floor(seconds / 60);
+		const s = seconds % 60;
+		return `${m}:${s.toString().padStart(2, '0')}`;
+	}
 </script>
 
 <svelte:head>
@@ -104,7 +499,7 @@
 			<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 				<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
 			</svg>
-			New Transaction
+			{terms.newTransaction}
 		</a>
 	</div>
 
@@ -188,7 +583,7 @@
 			<div class="sales-table">
 				<div class="sales-table-header">
 					<span class="col-health"></span>
-					<span class="col-title">Transaction</span>
+					<span class="col-title">{terms.transaction}</span>
 					<span class="col-client">Client</span>
 					<span class="col-price">Sale Price</span>
 					<span class="col-commission">Commission</span>
@@ -226,13 +621,13 @@
 		<!-- Recent Transactions -->
 		<div class="panel">
 			<div class="panel-header">
-				<h2>Recent Transactions</h2>
+				<h2>Recent {terms.transactions}</h2>
 				<a href="/app/transactions" class="panel-link">View all</a>
 			</div>
 			{#if data.recentTransactions.length === 0}
 				<div class="panel-empty">
-					<p>No transactions yet.</p>
-					<a href="/app/transactions/new" class="empty-action">Create your first transaction</a>
+					<p>No {terms.transactions.toLowerCase()} yet.</p>
+					<a href="/app/transactions/new" class="empty-action">Create your first {terms.transaction.toLowerCase()}</a>
 				</div>
 			{:else}
 				<div class="transactions-list">
@@ -332,7 +727,7 @@
 					<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
 				</svg>
 			</div>
-			<span class="action-label">New Transaction</span>
+			<span class="action-label">{terms.newTransaction}</span>
 			<span class="action-desc">Start collecting documents from a client</span>
 		</a>
 		<a href="/app/templates" class="action-card">
@@ -351,11 +746,337 @@
 					<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><path d="M14 2v6h6" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><polyline points="10 9 9 9 8 9" />
 				</svg>
 			</div>
-			<span class="action-label">All Transactions</span>
-			<span class="action-desc">View and manage all client transactions</span>
+			<span class="action-label">All {terms.transactions}</span>
+			<span class="action-desc">View and manage all {terms.transactions.toLowerCase()}</span>
 		</a>
+		<button type="button" class="action-card" onclick={openQuickAdd}>
+			<div class="action-icon action-quickadd">
+				<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+				</svg>
+			</div>
+			<span class="action-label">Quick Add</span>
+			<span class="action-desc">Voice memo or text note</span>
+		</button>
 	</div>
 </div>
+
+<!-- Quick Add Modal -->
+{#if showQuickAdd}
+	<div class="qa-overlay" onclick={closeQuickAdd}>
+		<div class="qa-modal" onclick={(e) => e.stopPropagation()}>
+			<div class="qa-header">
+				<h2>Quick Add</h2>
+				<button type="button" class="qa-close" onclick={closeQuickAdd}>
+					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+				</button>
+			</div>
+
+			{#if quickAddStep === 'success'}
+				<div class="qa-success">
+					<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+					<p>{qaSuccessMessage}</p>
+					<button class="qa-btn-primary" onclick={closeQuickAdd}>Done</button>
+				</div>
+			{:else if quickAddStep === 'error'}
+				<div class="qa-error">
+					<p>{qaVoiceError || qaPhotoError || 'Something went wrong'}</p>
+					<button class="qa-btn-secondary" onclick={() => { quickAddStep = 'input'; qaVoiceError = null; qaPhotoError = null; }}>Try Again</button>
+				</div>
+			{:else}
+				<!-- Tabs -->
+				{#if quickAddStep === 'input'}
+					<div class="qa-tabs">
+						<button class="qa-tab" class:active={quickAddTab === 'voice'} onclick={() => quickAddTab = 'voice'}>
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+							</svg>
+							Voice Note
+						</button>
+						<button class="qa-tab" class:active={quickAddTab === 'text'} onclick={() => quickAddTab = 'text'}>
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+							</svg>
+							Text Note
+						</button>
+						<button class="qa-tab" class:active={quickAddTab === 'photo'} onclick={() => quickAddTab = 'photo'}>
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+								<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+							</svg>
+							Photo
+						</button>
+					</div>
+				{/if}
+
+				<!-- Voice Note Tab -->
+				{#if quickAddTab === 'voice'}
+					{#if quickAddStep === 'input'}
+						{#if !qaIsRecording && !qaAudioBlob}
+							<div class="qa-body qa-center">
+								<button class="qa-mic-btn" onclick={qaStartRecording}>
+									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+									</svg>
+								</button>
+								<p class="qa-hint">Tap to start recording</p>
+							</div>
+						{:else if qaIsRecording}
+							<div class="qa-body qa-center">
+								<div class="qa-recording-indicator">
+									<div class="qa-pulse"></div>
+									<span class="qa-duration">{formatDuration(qaRecordingDuration)}</span>
+								</div>
+								<div class="qa-waveform">
+									{#each Array(16) as _, i}
+										<div class="qa-wave-bar" style="animation-delay: {i * 0.05}s"></div>
+									{/each}
+								</div>
+								{#if qaRecordingDuration >= 100}
+									<p class="qa-warn">Recording will stop at 2:00</p>
+								{/if}
+								<button class="qa-stop-btn" onclick={qaStopRecording}>
+									<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+									Stop Recording
+								</button>
+							</div>
+						{/if}
+					{:else if quickAddStep === 'assign'}
+						<div class="qa-body">
+							<p class="qa-recorded-info">
+								<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+								Recorded {formatDuration(qaRecordingDuration)}
+							</p>
+							<label class="qa-label">Assign to {terms.transaction}</label>
+							<select class="qa-select" bind:value={selectedTransactionId}>
+								<option value="">Select a {terms.transaction.toLowerCase()}...</option>
+								{#each data.assignableTransactions as txn}
+									<option value={txn.id}>{txn.title} — {txn.client_name}</option>
+								{/each}
+							</select>
+							<div class="qa-actions">
+								<button class="qa-btn-secondary" onclick={() => { quickAddStep = 'input'; qaAudioBlob = null; }}>Back</button>
+								<button class="qa-btn-primary" disabled={!selectedTransactionId} onclick={qaUploadAndProcess}>
+									Upload & Process
+								</button>
+							</div>
+						</div>
+					{:else if quickAddStep === 'processing'}
+						<div class="qa-body qa-center">
+							<div class="qa-waveform processing-wave">
+								{#each Array(16) as _, i}
+									<div class="qa-wave-bar" style="animation-delay: {i * 0.05}s"></div>
+								{/each}
+							</div>
+							<p class="qa-processing-label">Relaying your notes...</p>
+							<p class="qa-hint">Transcribing audio and extracting tasks</p>
+						</div>
+					{:else if quickAddStep === 'review' && qaVoiceResult}
+						<div class="qa-body">
+							{#if qaVoiceResult.transcript}
+								<div class="qa-transcript">
+									<p>"{qaVoiceResult.transcript}"</p>
+								</div>
+							{/if}
+							<div class="qa-field">
+								<label class="qa-label">Summary</label>
+								<textarea class="qa-textarea" bind:value={qaEditableSummary} rows="2"></textarea>
+							</div>
+							{#if qaEditableActions.length > 0}
+								<div class="qa-field">
+									<label class="qa-label">Proposed Actions</label>
+									{#each qaEditableActions as action, i}
+										<div class="qa-action-row">
+											<input type="checkbox" checked={qaSelectedActions.has(i)} onchange={() => {
+												const next = new Set(qaSelectedActions);
+												if (next.has(i)) next.delete(i); else next.add(i);
+												qaSelectedActions = next;
+											}} />
+											<input type="text" class="qa-action-input" bind:value={qaEditableActions[i].task} placeholder="Task..." />
+											<select class="qa-priority-select" bind:value={qaEditableActions[i].priority}>
+												<option value="High">High</option>
+												<option value="Medium">Medium</option>
+												<option value="Low">Low</option>
+											</select>
+											<button type="button" class="qa-remove-btn" onclick={() => qaRemoveAction(i)}>
+												<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+											</button>
+										</div>
+									{/each}
+									<button type="button" class="qa-add-action-btn" onclick={qaAddAction}>+ Add Task</button>
+								</div>
+							{:else}
+								<button type="button" class="qa-add-action-btn" onclick={qaAddAction}>+ Add Task Manually</button>
+							{/if}
+							<div class="qa-actions">
+								<button class="qa-btn-secondary" onclick={() => { quickAddStep = 'input'; resetQuickAdd(); }}>Discard</button>
+								<button class="qa-btn-primary" onclick={qaRelayActions} disabled={qaRelayLoading || qaSelectedActions.size === 0}>
+									{qaRelayLoading ? 'Relaying...' : `Relay ${qaSelectedActions.size} Task${qaSelectedActions.size === 1 ? '' : 's'}`}
+								</button>
+							</div>
+						</div>
+					{/if}
+				{/if}
+
+				<!-- Text Note Tab -->
+				{#if quickAddTab === 'text' && quickAddStep === 'input'}
+					<div class="qa-body">
+						<div class="qa-field">
+							<label class="qa-label">Title</label>
+							<input type="text" class="qa-input" bind:value={textTitle} placeholder="Note title..." />
+						</div>
+						<div class="qa-field">
+							<label class="qa-label">Content</label>
+							<textarea class="qa-textarea" bind:value={textContent} rows="4" placeholder="Type your note..."></textarea>
+						</div>
+						<div class="qa-field">
+							<label class="qa-label">Destination</label>
+							<div class="qa-dest-toggle">
+								<button class="qa-dest-btn" class:active={textDestination === 'project'} onclick={() => textDestination = 'project'}>
+									Add to {terms.transaction}
+								</button>
+								<button class="qa-dest-btn" class:active={textDestination === 'library'} onclick={() => textDestination = 'library'}>
+									Document Library
+								</button>
+							</div>
+						</div>
+						{#if textDestination === 'project'}
+							<div class="qa-field">
+								<label class="qa-label">Select {terms.transaction}</label>
+								<select class="qa-select" bind:value={selectedTransactionId}>
+									<option value="">Select a {terms.transaction.toLowerCase()}...</option>
+									{#each data.assignableTransactions as txn}
+										<option value={txn.id}>{txn.title} — {txn.client_name}</option>
+									{/each}
+								</select>
+							</div>
+						{/if}
+						<div class="qa-actions">
+							<button class="qa-btn-secondary" onclick={closeQuickAdd}>Cancel</button>
+							<button class="qa-btn-primary" onclick={saveTextNote} disabled={textSaving || !textTitle.trim() || (textDestination === 'project' && !selectedTransactionId)}>
+								{textSaving ? 'Saving...' : 'Save Note'}
+							</button>
+						</div>
+					</div>
+				{/if}
+
+				<!-- Photo Tab -->
+				{#if quickAddTab === 'photo'}
+					{#if quickAddStep === 'input'}
+						<div class="qa-body">
+							{#if !qaPhotoFile}
+								<div class="qa-center">
+									<label class="qa-photo-upload-btn">
+										<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+										</svg>
+										<input type="file" accept="image/*" capture="environment" onchange={qaHandlePhotoSelect} style="display:none" />
+									</label>
+									<p class="qa-hint">Tap to take a photo or choose from gallery</p>
+								</div>
+							{:else}
+								{#if qaPhotoPreview}
+									<div class="qa-photo-preview">
+										<img src={qaPhotoPreview} alt="Preview" />
+										<button type="button" class="qa-photo-remove" onclick={qaRemovePhoto}>
+											<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+										</button>
+									</div>
+								{/if}
+								<div class="qa-field">
+									<label class="qa-label">Title</label>
+									<input type="text" class="qa-input" bind:value={qaPhotoTitle} placeholder="Photo title..." />
+								</div>
+								<div class="qa-field">
+									<label class="qa-label">Notes</label>
+									<textarea class="qa-textarea" bind:value={qaPhotoNotes} rows="2" placeholder="Add notes about this photo..."></textarea>
+								</div>
+								<div class="qa-field">
+									<label class="qa-toggle-row">
+										<input type="checkbox" bind:checked={qaPhotoAnalyze} />
+										<span>Analyze with AI</span>
+									</label>
+									{#if qaPhotoAnalyze}
+										<p class="qa-hint" style="margin-top: 4px">AI will describe what it sees and suggest tasks</p>
+									{/if}
+								</div>
+								<div class="qa-field">
+									<label class="qa-label">Assign to {terms.transaction}</label>
+									<select class="qa-select" bind:value={selectedTransactionId}>
+										<option value="">Select a {terms.transaction.toLowerCase()}...</option>
+										{#each data.assignableTransactions as txn}
+											<option value={txn.id}>{txn.title} — {txn.client_name}</option>
+										{/each}
+									</select>
+								</div>
+								<div class="qa-actions">
+									<button class="qa-btn-secondary" onclick={qaRemovePhoto}>Back</button>
+									<button class="qa-btn-primary" onclick={qaUploadPhoto} disabled={qaPhotoUploading || !selectedTransactionId}>
+										{qaPhotoUploading ? 'Uploading...' : qaPhotoAnalyze ? 'Upload & Analyze' : 'Upload Photo'}
+									</button>
+								</div>
+							{/if}
+						</div>
+					{:else if quickAddStep === 'processing'}
+						<div class="qa-body qa-center">
+							<div class="qa-waveform processing-wave">
+								{#each Array(16) as _, i}
+									<div class="qa-wave-bar" style="animation-delay: {i * 0.05}s"></div>
+								{/each}
+							</div>
+							<p class="qa-processing-label">Analyzing your photo...</p>
+							<p class="qa-hint">AI is describing what it sees and extracting tasks</p>
+						</div>
+					{:else if quickAddStep === 'review' && qaPhotoResult}
+						<div class="qa-body">
+							{#if qaPhotoResult.ai_description}
+								<div class="qa-transcript">
+									<p class="qa-label" style="margin-bottom: 4px">AI Description</p>
+									<p>{qaPhotoResult.ai_description}</p>
+								</div>
+							{/if}
+							<div class="qa-field">
+								<label class="qa-label">Summary</label>
+								<textarea class="qa-textarea" bind:value={qaEditableSummary} rows="2"></textarea>
+							</div>
+							{#if qaEditableActions.length > 0}
+								<div class="qa-field">
+									<label class="qa-label">Proposed Actions</label>
+									{#each qaEditableActions as action, i}
+										<div class="qa-action-row">
+											<input type="checkbox" checked={qaSelectedActions.has(i)} onchange={() => {
+												const next = new Set(qaSelectedActions);
+												if (next.has(i)) next.delete(i); else next.add(i);
+												qaSelectedActions = next;
+											}} />
+											<input type="text" class="qa-action-input" bind:value={qaEditableActions[i].task} placeholder="Task..." />
+											<select class="qa-priority-select" bind:value={qaEditableActions[i].priority}>
+												<option value="High">High</option>
+												<option value="Medium">Medium</option>
+												<option value="Low">Low</option>
+											</select>
+											<button type="button" class="qa-remove-btn" onclick={() => qaRemoveAction(i)}>
+												<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+											</button>
+										</div>
+									{/each}
+									<button type="button" class="qa-add-action-btn" onclick={qaAddAction}>+ Add Task</button>
+								</div>
+							{:else}
+								<button type="button" class="qa-add-action-btn" onclick={qaAddAction}>+ Add Task Manually</button>
+							{/if}
+							<div class="qa-actions">
+								<button class="qa-btn-secondary" onclick={() => { quickAddStep = 'input'; resetQuickAdd(); }}>Discard</button>
+								<button class="qa-btn-primary" onclick={qaRelayPhotoActions} disabled={qaRelayLoading || qaSelectedActions.size === 0}>
+									{qaRelayLoading ? 'Relaying...' : `Relay ${qaSelectedActions.size} Task${qaSelectedActions.size === 1 ? '' : 's'}`}
+								</button>
+							</div>
+						</div>
+					{/if}
+				{/if}
+			{/if}
+		</div>
+	</div>
+{/if}
 
 <style>
 	.dashboard {
@@ -641,7 +1362,7 @@
 	/* Quick Actions */
 	.quick-actions {
 		display: grid;
-		grid-template-columns: repeat(3, 1fr);
+		grid-template-columns: repeat(4, 1fr);
 		gap: var(--space-md);
 	}
 
@@ -657,6 +1378,8 @@
 		text-align: center;
 		transition: all var(--transition-fast);
 		color: var(--text-primary);
+		cursor: pointer;
+		font-family: inherit;
 	}
 
 	.action-card:hover {
@@ -677,6 +1400,7 @@
 	.action-new { background: rgba(16, 185, 129, 0.15); color: #10b981; }
 	.action-templates { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
 	.action-view { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+	.action-quickadd { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
 
 	.action-label {
 		font-size: var(--font-size-sm);
@@ -854,12 +1578,421 @@
 	@media (max-width: 768px) {
 		.stats-grid { grid-template-columns: repeat(2, 1fr); }
 		.dashboard-grid { grid-template-columns: 1fr; }
-		.quick-actions { grid-template-columns: 1fr; }
+		.quick-actions { grid-template-columns: repeat(2, 1fr); }
 		.sales-table-header { display: none; }
 		.sales-row {
 			grid-template-columns: 30px 1fr;
 			grid-template-rows: auto auto;
 		}
 		.col-price, .col-commission, .col-progress, .col-status, .col-client { display: none; }
+	}
+
+	/* Quick Add Modal */
+	.qa-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1000;
+		backdrop-filter: blur(4px);
+	}
+	.qa-modal {
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-xl, 16px);
+		width: 90%;
+		max-width: 520px;
+		max-height: 85vh;
+		overflow-y: auto;
+	}
+	.qa-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: var(--space-lg) var(--space-xl);
+		border-bottom: 1px solid var(--border-color);
+	}
+	.qa-header h2 {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+	}
+	.qa-close {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 4px;
+	}
+	.qa-close:hover { color: var(--text-primary); }
+
+	/* Tabs */
+	.qa-tabs {
+		display: flex;
+		border-bottom: 1px solid var(--border-color);
+	}
+	.qa-tab {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-xs);
+		padding: var(--space-md);
+		background: none;
+		border: none;
+		border-bottom: 2px solid transparent;
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		color: var(--text-muted);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+	.qa-tab:hover { color: var(--text-primary); }
+	.qa-tab.active {
+		color: var(--color-accent);
+		border-bottom-color: var(--color-accent);
+	}
+
+	/* Body */
+	.qa-body {
+		padding: var(--space-xl);
+	}
+	.qa-center {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-xxl) var(--space-xl);
+	}
+
+	/* Voice recording */
+	.qa-mic-btn {
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		background: rgba(245, 158, 11, 0.15);
+		border: 2px solid rgba(245, 158, 11, 0.3);
+		color: #f59e0b;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all var(--transition-fast);
+	}
+	.qa-mic-btn:hover {
+		background: rgba(245, 158, 11, 0.25);
+		border-color: #f59e0b;
+		transform: scale(1.05);
+	}
+	.qa-hint {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+	}
+	.qa-recording-indicator {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+	}
+	.qa-pulse {
+		width: 12px;
+		height: 12px;
+		border-radius: 50%;
+		background: #ef4444;
+		animation: qa-pulse-anim 1s ease-in-out infinite;
+	}
+	@keyframes qa-pulse-anim {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.5; transform: scale(1.2); }
+	}
+	.qa-duration {
+		font-size: var(--font-size-xl);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.qa-waveform {
+		display: flex;
+		align-items: center;
+		gap: 3px;
+		height: 40px;
+	}
+	.qa-wave-bar {
+		width: 3px;
+		border-radius: 2px;
+		background: var(--color-accent);
+		animation: qa-wave 0.8s ease-in-out infinite alternate;
+	}
+	@keyframes qa-wave {
+		from { height: 4px; opacity: 0.3; }
+		to { height: 28px; opacity: 1; }
+	}
+	.qa-waveform.processing-wave .qa-wave-bar {
+		background: var(--text-muted);
+		animation-duration: 1.2s;
+	}
+	.qa-warn {
+		font-size: var(--font-size-xs);
+		color: #f59e0b;
+	}
+	.qa-stop-btn {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-lg);
+		background: #ef4444;
+		color: white;
+		border: none;
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.qa-stop-btn:hover { background: #dc2626; }
+
+	.qa-recorded-info {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		font-size: var(--font-size-sm);
+		color: #10b981;
+		margin-bottom: var(--space-lg);
+	}
+	.qa-processing-label {
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+
+	/* Form elements */
+	.qa-field {
+		margin-bottom: var(--space-lg);
+	}
+	.qa-label {
+		display: block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-secondary);
+		margin-bottom: var(--space-xs);
+	}
+	.qa-input, .qa-textarea, .qa-select {
+		width: 100%;
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-sm) var(--space-md);
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		font-family: inherit;
+	}
+	.qa-input:focus, .qa-textarea:focus, .qa-select:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+	.qa-textarea { resize: vertical; }
+
+	.qa-transcript {
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
+		padding: var(--space-md);
+		margin-bottom: var(--space-lg);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		font-style: italic;
+	}
+
+	/* Action rows */
+	.qa-action-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-xs);
+	}
+	.qa-action-row input[type="checkbox"] {
+		width: 16px;
+		height: 16px;
+		accent-color: var(--color-accent);
+		flex-shrink: 0;
+	}
+	.qa-action-input {
+		flex: 1;
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-xs) var(--space-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		font-family: inherit;
+	}
+	.qa-action-input:focus { outline: none; border-color: var(--color-accent); }
+	.qa-priority-select {
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-xs) var(--space-sm);
+		font-size: var(--font-size-xs);
+		color: var(--text-primary);
+	}
+	.qa-remove-btn {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 2px;
+	}
+	.qa-remove-btn:hover { color: #ef4444; }
+	.qa-add-action-btn {
+		background: none;
+		border: 1px dashed var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-xs) var(--space-md);
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		cursor: pointer;
+		width: 100%;
+		margin-top: var(--space-sm);
+	}
+	.qa-add-action-btn:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+	/* Destination toggle */
+	.qa-dest-toggle {
+		display: flex;
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		overflow: hidden;
+	}
+	.qa-dest-btn {
+		flex: 1;
+		padding: var(--space-sm);
+		background: var(--bg-tertiary);
+		border: none;
+		font-size: var(--font-size-xs);
+		font-weight: 500;
+		color: var(--text-muted);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+	.qa-dest-btn.active {
+		background: var(--color-accent);
+		color: var(--text-inverse);
+	}
+
+	/* Buttons */
+	.qa-actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: var(--space-sm);
+		margin-top: var(--space-lg);
+	}
+	.qa-btn-primary {
+		padding: var(--space-sm) var(--space-lg);
+		background: var(--color-accent);
+		color: var(--text-inverse);
+		border: none;
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		cursor: pointer;
+	}
+	.qa-btn-primary:hover { background: var(--color-accent-hover); }
+	.qa-btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+	.qa-btn-secondary {
+		padding: var(--space-sm) var(--space-lg);
+		background: var(--bg-tertiary);
+		color: var(--text-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		cursor: pointer;
+	}
+	.qa-btn-secondary:hover { background: var(--bg-elevated); }
+
+	/* Success / Error */
+	.qa-success {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-xxl);
+		text-align: center;
+	}
+	.qa-success p {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+	.qa-error {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-xxl);
+		text-align: center;
+	}
+	.qa-error p {
+		font-size: var(--font-size-sm);
+		color: #ef4444;
+	}
+
+	/* Photo tab */
+	.qa-photo-upload-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 72px;
+		height: 72px;
+		border-radius: 50%;
+		background: var(--bg-tertiary);
+		border: 2px solid var(--border-color);
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+	.qa-photo-upload-btn:hover {
+		background: var(--color-accent-bg);
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+	.qa-photo-preview {
+		position: relative;
+		margin-bottom: var(--space-md);
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		border: 1px solid var(--border-color);
+	}
+	.qa-photo-preview img {
+		display: block;
+		width: 100%;
+		max-height: 200px;
+		object-fit: cover;
+	}
+	.qa-photo-remove {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		background: rgba(0, 0, 0, 0.6);
+		border: none;
+		color: #fff;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.qa-toggle-row {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		cursor: pointer;
+	}
+	.qa-toggle-row input[type="checkbox"] {
+		width: 16px;
+		height: 16px;
+		accent-color: var(--color-accent);
 	}
 </style>

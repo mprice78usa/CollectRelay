@@ -77,7 +77,7 @@ export const actions: Actions = {
 
 		const formData = await request.formData();
 		const industry = (formData.get('industry') as string)?.trim();
-		const validIndustries = ['real_estate', 'contractors', 'accountants', 'hr', 'other'];
+		const validIndustries = ['real_estate', 'contractors', 'other'];
 
 		if (!industry || !validIndustries.includes(industry)) {
 			return fail(400, { error: 'Please select an industry', step: 1 });

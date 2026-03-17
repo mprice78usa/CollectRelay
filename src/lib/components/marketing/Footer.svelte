@@ -26,9 +26,7 @@
 					<h4>Industries</h4>
 					<a href="/industries/real-estate">Real Estate</a>
 					<a href="/industries/contractors">Contractors</a>
-					<a href="/industries/accountants">Accountants</a>
-					<a href="/industries/hr">Human Resources</a>
-				</div>
+					</div>
 				<div class="footer-col">
 					<h4>Company</h4>
 					<a href="mailto:info@collectrelay.com">Contact</a>

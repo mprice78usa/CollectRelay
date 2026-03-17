@@ -1,0 +1,550 @@
+<script lang="ts">
+	import Navbar from '$components/marketing/Navbar.svelte';
+	import Footer from '$components/marketing/Footer.svelte';
+</script>
+
+<svelte:head>
+	<title>CollectRelay Pro — AI-Powered Field Tools for Contractors</title>
+	<meta name="description" content="Turn site photos and voice notes into professional project logs, punch lists, and change orders. CollectRelay Pro uses Multimodal AI to close the field-to-office gap." />
+</svelte:head>
+
+<Navbar />
+
+<main class="pro-page">
+	<div class="container">
+		<!-- Hero -->
+		<section class="hero-section">
+			<span class="badge">CollectRelay Pro</span>
+			<h1>Close the Gap Between<br />the Field and the Office</h1>
+			<p class="lead">
+				CollectRelay Pro uses Multimodal AI to turn site photos and voice notes into
+				professional project logs, punch lists, and change orders — all from your phone.
+			</p>
+			<div class="hero-actions">
+				<a href="/register" class="btn-primary">Start Your 14-Day Pro Trial</a>
+				<a href="/pricing" class="btn-secondary">View Pricing</a>
+			</div>
+		</section>
+
+		<!-- How It Works — The AI Relay -->
+		<section class="how-it-works" id="how-it-works">
+			<h2 class="section-title">How It Works — The AI Relay</h2>
+			<p class="section-sub">Three steps from field chaos to organized documentation.</p>
+
+			<div class="steps-grid">
+				<div class="step">
+					<div class="step-number">1</div>
+					<h3>Capture the Chaos</h3>
+					<p>Record a voice memo or snap site photos while you walk the job. No forms, no typing — just talk and shoot.</p>
+				</div>
+				<div class="step">
+					<div class="step-number">2</div>
+					<h3>AI Orchestration</h3>
+					<p>Our Relay Assistant listens to your audio, sees your photos, and extracts tasks, flags issues, and assigns priorities.</p>
+				</div>
+				<div class="step">
+					<div class="step-number">3</div>
+					<h3>Instant Documentation</h3>
+					<p>One tap to relay AI-extracted insights to your project checklist, client portal, or daily log. Done.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Field-to-Dashboard -->
+		<section class="comparison-section">
+			<h2 class="section-title">Field-to-Dashboard in Seconds</h2>
+			<p class="section-sub">Messy field input goes in. Clean, actionable documentation comes out.</p>
+
+			<div class="comparison-grid">
+				<div class="comparison-card">
+					<div class="comparison-from">
+						<span class="comparison-label">Field Input</span>
+						<p>"Hey, the framing on the south wall is bowed — gonna need the crew back to fix it before drywall."</p>
+					</div>
+					<div class="comparison-arrow">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+					</div>
+					<div class="comparison-to">
+						<span class="comparison-label">Relay Output</span>
+						<p><strong>Task:</strong> Reframe south wall before drywall<br /><strong>Priority:</strong> High<br /><strong>Trade:</strong> Framing</p>
+					</div>
+				</div>
+				<div class="comparison-card">
+					<div class="comparison-from">
+						<span class="comparison-label">Field Input</span>
+						<p>A grainy phone photo of water staining on ceiling tiles</p>
+					</div>
+					<div class="comparison-arrow">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+					</div>
+					<div class="comparison-to">
+						<span class="comparison-label">Relay Output</span>
+						<p><strong>Issue:</strong> Water intrusion — ceiling tiles show active staining<br /><strong>Priority:</strong> High<br /><strong>Action:</strong> Inspect roof/HVAC for source</p>
+					</div>
+				</div>
+				<div class="comparison-card">
+					<div class="comparison-from">
+						<span class="comparison-label">Field Input</span>
+						<p>Handwritten notes on the back of a blueprint</p>
+					</div>
+					<div class="comparison-arrow">
+						<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+					</div>
+					<div class="comparison-to">
+						<span class="comparison-label">Relay Output</span>
+						<p><strong>Document:</strong> PDF Site Observation Report with embedded photos, notes, and AI analysis per image</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Core Pro Features -->
+		<section class="features-section">
+			<h2 class="section-title">Core Pro Features</h2>
+			<p class="section-sub">AI-powered tools designed for the way contractors actually work.</p>
+
+			<div class="features-grid grid-2">
+				<div class="feature-card ai-card">
+					<div class="feature-icon accent">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+						</svg>
+					</div>
+					<h3>Voice-to-Task Engine</h3>
+					<p>Speak naturally while walking the job site. AI transcribes your words and extracts tasks with priorities, trade assignments, and deadlines — ready to relay to your project in one tap.</p>
+				</div>
+				<div class="feature-card ai-card">
+					<div class="feature-icon accent">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+						</svg>
+					</div>
+					<h3>Photo Site Audits</h3>
+					<p>Snap photos of site conditions, safety concerns, or quality issues. AI vision analyzes what it sees, describes findings, and suggests corrective actions. Bundle photos into a professional PDF Site Observation Report.</p>
+				</div>
+				<div class="feature-card ai-card">
+					<div class="feature-icon accent">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M12 5v14"/><path d="M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="2"/>
+						</svg>
+					</div>
+					<h3>Quick Add Dashboard</h3>
+					<p>Capture voice, text, or photos right from your dashboard and assign them to any project. One input point for everything — no switching between apps, screens, or tools.</p>
+				</div>
+				<div class="feature-card ai-card">
+					<div class="feature-icon accent">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+						</svg>
+					</div>
+					<h3>No-Account Client Portal</h3>
+					<p>Subs and clients click a magic link and see exactly what you need from them. No passwords, no sign-ups — just a clean upload portal with clear instructions.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Platform Features -->
+		<section class="features-section">
+			<h2 class="section-title">Complete Project Platform</h2>
+			<p class="section-sub">Everything else you need to collect, organize, and close out project docs.</p>
+
+			<div class="features-grid">
+				<div class="feature-card">
+					<div class="feature-icon green">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>
+						</svg>
+					</div>
+					<h3>Smart Checklists</h3>
+					<p>Custom checklists for every project type — from permitting to closeout. Required items, due dates, and real-time completion tracking.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon blue">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+						</svg>
+					</div>
+					<h3>Project Templates</h3>
+					<p>Reusable templates for residential, commercial, renovation, and custom project types. Clone a checklist in seconds.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon purple">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+						</svg>
+					</div>
+					<h3>Built-in E-Signatures</h3>
+					<p>Send change orders, lien waivers, and approvals for signature. Signed copies land back in the project automatically.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon amber">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
+						</svg>
+					</div>
+					<h3>Team & Partner Access</h3>
+					<p>Invite project managers, subs, and inspectors with role-based permissions. Everyone sees their slice of the project.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon pink">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+						</svg>
+					</div>
+					<h3>Client-Friendly Uploads</h3>
+					<p>Drag-and-drop on desktop, camera-to-PDF on mobile. Clients upload docs without ever creating an account.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon green">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/>
+						</svg>
+					</div>
+					<h3>Automated Reminders</h3>
+					<p>Stop chasing subs for documents. Configurable email and push reminders go out automatically until items are submitted.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon blue">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+						</svg>
+					</div>
+					<h3>Audit Trail</h3>
+					<p>Every upload, request, approval, and reminder is recorded with timestamps. Complete accountability on every project.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon purple">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+						</svg>
+					</div>
+					<h3>Reports & Analytics</h3>
+					<p>Pipeline overview, completion rates, and activity trends. Know which projects need attention at a glance.</p>
+				</div>
+				<div class="feature-card">
+					<div class="feature-icon red">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+						</svg>
+					</div>
+					<h3>Zapier & API</h3>
+					<p>Connect CollectRelay to your CRM, accounting software, or project management tools with webhooks and a REST API.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- CTA -->
+		<section class="cta-section">
+			<h2>Ready to Close the Field-to-Office Gap?</h2>
+			<p>Start your free 14-day Pro trial. No credit card required.</p>
+			<div class="cta-actions">
+				<a href="/register" class="btn-primary">Start Your Pro Trial</a>
+				<a href="/pricing" class="btn-outline">View Pricing</a>
+			</div>
+		</section>
+	</div>
+</main>
+
+<Footer />
+
+<style>
+	.pro-page {
+		padding-top: var(--space-5xl);
+		padding-bottom: var(--space-5xl);
+	}
+
+	.container {
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 0 var(--space-lg);
+	}
+
+	/* Hero */
+	.hero-section {
+		text-align: center;
+		margin-bottom: var(--space-5xl);
+		padding-top: var(--space-3xl);
+	}
+
+	.badge {
+		display: inline-block;
+		padding: var(--space-xs) var(--space-md);
+		background: linear-gradient(135deg, rgba(74, 122, 245, 0.15), rgba(16, 185, 129, 0.15));
+		color: #4a7af5;
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		border-radius: var(--radius-full);
+		margin-bottom: var(--space-xl);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+
+	h1 {
+		font-size: clamp(var(--font-size-3xl), 5vw, 3.2rem);
+		font-weight: 800;
+		line-height: 1.1;
+		letter-spacing: -0.03em;
+		margin-bottom: var(--space-xl);
+	}
+
+	.lead {
+		font-size: var(--font-size-lg);
+		color: var(--text-secondary);
+		line-height: 1.7;
+		max-width: 650px;
+		margin: 0 auto var(--space-xxl);
+	}
+
+	.hero-actions {
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	/* Section Titles */
+	.section-title {
+		font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-xxl));
+		font-weight: 700;
+		text-align: center;
+		letter-spacing: -0.02em;
+		margin-bottom: var(--space-md);
+	}
+
+	.section-sub {
+		text-align: center;
+		color: var(--text-secondary);
+		font-size: var(--font-size-md);
+		max-width: 600px;
+		margin: 0 auto var(--space-3xl);
+	}
+
+	/* How It Works */
+	.how-it-works {
+		margin-bottom: var(--space-5xl);
+	}
+
+	.steps-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-xl);
+	}
+
+	.step {
+		text-align: center;
+		padding: var(--space-xl);
+	}
+
+	.step-number {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--color-accent);
+		color: white;
+		font-weight: 700;
+		font-size: var(--font-size-md);
+		border-radius: var(--radius-full);
+		margin: 0 auto var(--space-lg);
+	}
+
+	.step h3 {
+		font-size: var(--font-size-md);
+		font-weight: 600;
+		margin-bottom: var(--space-sm);
+	}
+
+	.step p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		line-height: 1.6;
+	}
+
+	/* Comparison */
+	.comparison-section {
+		margin-bottom: var(--space-5xl);
+	}
+
+	.comparison-grid {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-lg);
+	}
+
+	.comparison-card {
+		display: flex;
+		align-items: center;
+		gap: var(--space-lg);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		padding: var(--space-xl);
+	}
+
+	.comparison-from, .comparison-to {
+		flex: 1;
+	}
+
+	.comparison-label {
+		display: inline-block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		margin-bottom: var(--space-sm);
+		color: var(--text-muted);
+	}
+
+	.comparison-from p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		line-height: 1.6;
+		font-style: italic;
+	}
+
+	.comparison-to p {
+		color: var(--text-primary);
+		font-size: var(--font-size-sm);
+		line-height: 1.7;
+	}
+
+	.comparison-arrow {
+		flex-shrink: 0;
+		color: var(--color-accent);
+	}
+
+	/* Features Grid */
+	.features-section {
+		margin-bottom: var(--space-5xl);
+	}
+
+	.features-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-xl);
+	}
+
+	.features-grid.grid-2 {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	.feature-card {
+		padding: var(--space-xl);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		transition: border-color var(--transition-fast), transform var(--transition-fast);
+	}
+
+	.feature-card:hover {
+		border-color: var(--border-color-light);
+		transform: translateY(-2px);
+	}
+
+	.feature-card.ai-card {
+		border-color: rgba(74, 122, 245, 0.2);
+		background: linear-gradient(135deg, rgba(74, 122, 245, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+	}
+
+	.feature-card.ai-card:hover {
+		border-color: rgba(74, 122, 245, 0.4);
+	}
+
+	.feature-icon {
+		width: 48px;
+		height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-md);
+		margin-bottom: var(--space-lg);
+	}
+
+	.feature-icon.green { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+	.feature-icon.blue { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+	.feature-icon.purple { background: rgba(168, 85, 247, 0.1); color: #a855f7; }
+	.feature-icon.amber { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
+	.feature-icon.pink { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+	.feature-icon.red { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+	.feature-icon.accent { background: rgba(74, 122, 245, 0.12); color: #4a7af5; }
+
+	.feature-card h3 {
+		font-size: var(--font-size-md);
+		font-weight: 600;
+		margin-bottom: var(--space-sm);
+	}
+
+	.feature-card p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		line-height: 1.7;
+	}
+
+	/* CTA */
+	.cta-section {
+		text-align: center;
+	}
+
+	.cta-section h2 {
+		font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-3xl));
+		font-weight: 700;
+		margin-bottom: var(--space-md);
+	}
+
+	.cta-section p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-md);
+		margin-bottom: var(--space-xxl);
+	}
+
+	.cta-actions {
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
+	}
+
+	/* Buttons */
+	.btn-primary {
+		display: inline-flex;
+		align-items: center;
+		padding: var(--space-md) var(--space-xxl);
+		background: var(--color-accent);
+		color: var(--text-inverse);
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		border-radius: var(--radius-lg);
+		transition: all var(--transition-fast);
+		box-shadow: var(--shadow-glow);
+	}
+
+	.btn-primary:hover {
+		background: var(--color-accent-hover);
+		color: var(--text-inverse);
+		transform: translateY(-1px);
+	}
+
+	.btn-secondary, .btn-outline {
+		display: inline-flex;
+		align-items: center;
+		padding: var(--space-md) var(--space-xxl);
+		border: 1px solid var(--border-color);
+		color: var(--text-secondary);
+		font-size: var(--font-size-lg);
+		font-weight: 500;
+		border-radius: var(--radius-lg);
+		transition: all var(--transition-fast);
+	}
+
+	.btn-secondary:hover, .btn-outline:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+	}
+
+	@media (max-width: 768px) {
+		.features-grid, .features-grid.grid-2, .steps-grid { grid-template-columns: 1fr; }
+		.comparison-card { flex-direction: column; text-align: center; }
+		.comparison-arrow { transform: rotate(90deg); }
+		.cta-actions, .hero-actions { flex-direction: column; align-items: center; }
+	}
+</style>

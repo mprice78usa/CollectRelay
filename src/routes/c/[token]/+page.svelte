@@ -6,6 +6,7 @@
 	import FilePreview from '$components/ui/FilePreview.svelte';
 	import SignaturePad from '$components/ui/SignaturePad.svelte';
 	import { isPushSupported, registerServiceWorker, subscribeToPush, isPushSubscribed } from '$lib/push-subscription';
+	import { getTerms } from '$lib/terminology';
 
 	let notifPermission = $state<string>('default');
 	let notifDismissed = $state(false);
@@ -75,6 +76,7 @@
 
 	let { data } = $props();
 
+	let terms = $derived(getTerms(data.industry));
 	let txn = $derived(data.transaction);
 
 	let completedCount = $derived(
@@ -287,13 +289,13 @@
 </script>
 
 <svelte:head>
-	<title>{txn?.title || 'Document Request'} — CollectRelay</title>
+	<title>{txn?.title || terms.request} — CollectRelay</title>
 </svelte:head>
 
 {#if !txn}
 	<div class="error-state">
-		<h1>Request Not Found</h1>
-		<p>This document request could not be found. It may have been completed or the link may have expired.</p>
+		<h1>{terms.request} Not Found</h1>
+		<p>This {terms.request.toLowerCase()} could not be found. It may have been completed or the link may have expired.</p>
 	</div>
 {:else}
 	<div class="client-portal">

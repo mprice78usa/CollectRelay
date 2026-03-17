@@ -15,6 +15,8 @@ import { getMilestonesForTransaction, createMilestone, updateMilestone, deleteMi
 import type { DbMilestone } from '$lib/server/db/milestones';
 import { getPartnerLinksForTransaction, createPartnerLink, revokePartnerLink } from '$lib/server/db/partner-links';
 import type { DbPartnerLink } from '$lib/server/db/partner-links';
+import { getDocumentLibrary } from '$lib/server/db/document-library';
+import type { DbDocumentLibraryItem } from '$lib/server/db/document-library';
 
 export const load: PageServerLoad = async ({ params, locals, platform }) => {
 	const db = platform?.env?.DB;
@@ -136,7 +138,7 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 			{ id: 'ms-3', transaction_id: params.id, milestone_type: 'appraisal', label: 'Appraisal Due', date: '2026-03-22', completed: 0, sort_order: 2, created_at: '2026-03-01' },
 			{ id: 'ms-4', transaction_id: params.id, milestone_type: 'closing', label: 'Closing', date: '2026-05-01', completed: 0, sort_order: 6, created_at: '2026-03-01' }
 		];
-		return { transaction: mockTransaction, files: mockFiles, comments: mockComments, customFields: mockCustomFields, collaborators: [] as any[], itemActivity: [] as any[], lastSeenAt: null as string | null, milestones: mockMilestones, partnerLinks: [] as DbPartnerLink[] };
+		return { transaction: mockTransaction, files: mockFiles, comments: mockComments, customFields: mockCustomFields, collaborators: [] as any[], itemActivity: [] as any[], lastSeenAt: null as string | null, milestones: mockMilestones, partnerLinks: [] as DbPartnerLink[], libraryDocs: [] as DbDocumentLibraryItem[], voiceNotes: [] as any[], photoNotes: [] as any[] };
 	}
 
 	const transaction = await getTransactionById(db, params.id, workspaceId);
@@ -146,7 +148,7 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 
 	// Load data + activity info in parallel
 	const userId = locals.user!.id;
-	const [files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks] = await Promise.all([
+	const [files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, voiceNotesResult, photoNotesResult] = await Promise.all([
 		getFilesForTransaction(db, params.id),
 		getCommentsForTransaction(db, params.id),
 		getTransactionCustomFields(db, params.id),
@@ -154,13 +156,28 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 		getItemActivityMap(db, params.id),
 		getLastSeen(db, params.id, 'pro', userId),
 		getMilestonesForTransaction(db, params.id),
-		getPartnerLinksForTransaction(db, params.id)
+		getPartnerLinksForTransaction(db, params.id),
+		db.prepare('SELECT id, duration_seconds, transcript, transcript_status, ai_actions, ai_status, is_relayed, created_at FROM voice_notes WHERE transaction_id = ? ORDER BY created_at DESC')
+			.bind(params.id).all(),
+		db.prepare('SELECT id, r2_key, filename, mime_type, title, notes, ai_description, ai_actions, ai_status, is_relayed, created_at FROM photo_notes WHERE transaction_id = ? ORDER BY created_at DESC')
+			.bind(params.id).all()
 	]);
+	const voiceNotes = voiceNotesResult.results || [];
+	const photoNotes = photoNotesResult.results || [];
 
 	// Mark as seen (non-blocking)
 	markTransactionSeen(db, params.id, 'pro', userId).catch(() => {});
 
-	return { transaction, files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks };
+	// Load document library docs with files for "Attach from Library"
+	const ws = await db
+		.prepare('SELECT industry FROM workspaces WHERE id = ?')
+		.bind(workspaceId)
+		.first<{ industry: string }>();
+	const industry = ws?.industry || 'real_estate';
+	const allLibraryDocs = await getDocumentLibrary(db, workspaceId, undefined, industry);
+	const libraryDocs = allLibraryDocs.filter(d => d.r2_key && d.filename);
+
+	return { transaction, files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, libraryDocs, voiceNotes, photoNotes };
 };
 
 export const actions: Actions = {
@@ -209,6 +226,10 @@ export const actions: Actions = {
 		const appUrl = platform?.env?.APP_URL || url.origin;
 		const magicLinkUrl = `${appUrl}/c/${token}`;
 
+		// Get workspace industry for terminology
+		const ws = await db.prepare('SELECT industry FROM workspaces WHERE id = ?')
+			.bind(user.workspaceId).first<{ industry: string }>();
+
 		// Send email
 		const { sendMagicLinkEmail } = await import('$lib/server/email');
 		await sendMagicLinkEmail(platform!.env, {
@@ -216,7 +237,8 @@ export const actions: Actions = {
 			clientName: transaction.client_name,
 			proName: user.name,
 			transactionTitle: transaction.title,
-			magicLinkUrl
+			magicLinkUrl,
+			industry: ws?.industry
 		});
 
 		// Send SMS if enabled and client has phone number

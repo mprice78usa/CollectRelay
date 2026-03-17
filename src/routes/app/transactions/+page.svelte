@@ -3,8 +3,11 @@
 	import EmptyState from '$components/ui/EmptyState.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { getTerms } from '$lib/terminology';
 
 	let { data } = $props();
+
+	let terms = $derived(getTerms(data.industry));
 
 	// Multi-select state
 	let selectedIds = $state<Set<string>>(new Set());
@@ -43,16 +46,17 @@
 	async function bulkAction(action: string) {
 		if (selectedIds.size === 0) return;
 
+		const t = terms.transactions.toLowerCase();
 		const messages: Record<string, string> = {
-			remind: `Send reminders to ${selectedCount} transaction(s)?`,
-			mark_in_review: `Mark ${selectedCount} transaction(s) as In Review?`,
-			mark_complete: `Mark ${selectedCount} transaction(s) as Complete?`,
-			cancel: `Cancel ${selectedCount} transaction(s)?`,
-			revive: `Revive ${selectedCount} transaction(s)?`,
-			delete: `Permanently delete ${selectedCount} transaction(s)? This cannot be undone.`
+			remind: `Send reminders to ${selectedCount} ${t}?`,
+			mark_in_review: `Mark ${selectedCount} ${t} as In Review?`,
+			mark_complete: `Mark ${selectedCount} ${t} as Complete?`,
+			cancel: `Cancel ${selectedCount} ${t}?`,
+			revive: `Revive ${selectedCount} ${t}?`,
+			delete: `Permanently delete ${selectedCount} ${t}? This cannot be undone.`
 		};
 
-		if (!confirm(messages[action] || `Perform ${action} on ${selectedCount} transaction(s)?`)) return;
+		if (!confirm(messages[action] || `Perform ${action} on ${selectedCount} ${t}?`)) return;
 
 		bulkLoading = action;
 		try {
@@ -158,20 +162,20 @@
 </script>
 
 <svelte:head>
-	<title>Transactions — CollectRelay</title>
+	<title>{terms.transactions} — CollectRelay</title>
 </svelte:head>
 
 <div class="transactions-page">
 	<div class="page-header">
 		<div>
-			<h1>Transactions</h1>
-			<p class="subtitle">Track all your document collection requests.</p>
+			<h1>{terms.transactions}</h1>
+			<p class="subtitle">{terms.trackSubtitle}</p>
 		</div>
 		<a href="/app/transactions/new" class="btn-primary">
 			<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 				<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
 			</svg>
-			New Transaction
+			{terms.newTransaction}
 		</a>
 	</div>
 
@@ -188,7 +192,7 @@
 	</div>
 
 	{#if data.transactions.length === 0}
-		<EmptyState message={data.statusFilter === 'cancelled' ? 'No cancelled transactions.' : data.statusFilter === 'all' ? 'No transactions yet. Create one to get started.' : `No ${data.statusFilter.replace('_', ' ')} transactions.`} />
+		<EmptyState message={data.statusFilter === 'cancelled' ? `No cancelled ${terms.transactions.toLowerCase()}.` : data.statusFilter === 'all' ? `No ${terms.transactions.toLowerCase()} yet. Create one to get started.` : `No ${data.statusFilter.replace('_', ' ')} ${terms.transactions.toLowerCase()}.`} />
 	{:else}
 		<!-- Select all row -->
 		<div class="select-all-row">
@@ -244,7 +248,7 @@
 									</form>
 									<form method="POST" action="?/delete" use:enhance>
 										<input type="hidden" name="transactionId" value={txn.id} />
-										<button type="submit" class="btn-delete-forever" onclick={(e) => { if (!confirm('Permanently delete this transaction? This cannot be undone.')) e.preventDefault(); }}>
+										<button type="submit" class="btn-delete-forever" onclick={(e) => { if (!confirm(`Permanently delete this ${terms.transaction.toLowerCase()}? This cannot be undone.`)) e.preventDefault(); }}>
 											<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 												<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
 											</svg>
@@ -285,7 +289,7 @@
 											style="width: {txn.item_count > 0 ? (txn.completed_count / txn.item_count) * 100 : 0}%"
 										></div>
 									</div>
-									<span class="progress-label">{txn.completed_count}/{txn.item_count} items</span>
+									<span class="progress-label">{txn.completed_count}/{txn.item_count} {terms.itemsProgress}</span>
 								</div>
 								<div class="card-meta">
 									{#if txn.due_date}

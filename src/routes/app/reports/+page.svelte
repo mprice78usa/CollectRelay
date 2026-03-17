@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Card from '$components/ui/Card.svelte';
+	import { getTerms } from '$lib/terminology';
 
 	let { data } = $props();
+
+	let terms = $derived(getTerms(data.industry));
 
 	const ranges = [
 		{ value: '7d', label: '7 Days' },
@@ -151,7 +154,7 @@
 				</div>
 				<div class="metric">
 					<div class="metric-value">{data.metrics.avg_items_per_transaction}</div>
-					<div class="metric-label">Avg items / txn</div>
+					<div class="metric-label">Avg {terms.itemsProgress} / {terms.transaction.toLowerCase()}</div>
 				</div>
 				<div class="metric">
 					<div class="metric-value">{formatNumber(data.metrics.total_completed)}</div>

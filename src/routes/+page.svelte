@@ -13,8 +13,8 @@
 </script>
 
 <svelte:head>
-	<title>CollectRelay — Send requests. Collect files. Stay on track.</title>
-	<meta name="description" content="A simple client portal for document collection, checklists, and e-signatures. Built for real estate pros, contractors, and accountants." />
+	<title>CollectRelay — Stop Chasing Paperwork. Start Closing Projects.</title>
+	<meta name="description" content="CollectRelay turns document chaos into organized checklists. Built for real estate pros and contractors." />
 </svelte:head>
 
 <Navbar />

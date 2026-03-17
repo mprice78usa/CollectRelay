@@ -138,6 +138,10 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			{ id: 'mock-txn-5', title: '555 Birch Ln — Buyer Package', client_name: 'Lisa Park', status: 'active', sale_price: 275000, commission_amount: 8250, due_date: '2026-03-25', item_count: 5, completed_count: 0, updated_at: '2026-03-05T08:00:00Z' }
 		];
 
+		const mockAssignable = mockTransactions
+			.filter(t => ['active', 'in_review', 'draft'].includes(t.status))
+			.map(t => ({ id: t.id, title: t.title, client_name: t.client_name }));
+
 		return {
 			counts: { active: 3, pending_review: 1, completed: 1, total: 5 },
 			recentTransactions: mockTransactions,
@@ -145,16 +149,18 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			pipelineValue: 1630000,
 			totalCommission: 46000,
 			pendingSales: mockPendingSales,
-			mortgageRates: { rate_30yr: 6.65, rate_15yr: 5.89, updated_at: new Date().toISOString() }
+			mortgageRates: { rate_30yr: 6.65, rate_15yr: 5.89, updated_at: new Date().toISOString() },
+			assignableTransactions: mockAssignable
 		};
 	}
 
-	const [counts, recentTransactions, recentActivity, salesData, ratesRow] = await Promise.all([
+	const [counts, recentTransactions, recentActivity, salesData, ratesRow, assignableResult] = await Promise.all([
 		getTransactionCounts(db, workspaceId),
 		getRecentTransactions(db, workspaceId, 5),
 		getRecentAuditEvents(db, workspaceId, 15),
 		getPendingSalesData(db, workspaceId),
-		db.prepare("SELECT rate_30yr, rate_15yr, updated_at FROM mortgage_rates WHERE id = 'current-conforming'").first<{ rate_30yr: number; rate_15yr: number; updated_at: string }>()
+		db.prepare("SELECT rate_30yr, rate_15yr, updated_at FROM mortgage_rates WHERE id = 'current-conforming'").first<{ rate_30yr: number; rate_15yr: number; updated_at: string }>(),
+		db.prepare("SELECT id, title, client_name FROM transactions WHERE workspace_id = ? AND status IN ('active', 'in_review', 'draft') ORDER BY updated_at DESC").bind(workspaceId).all<{ id: string; title: string; client_name: string }>()
 	]);
 
 	return {
@@ -164,6 +170,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		pipelineValue: salesData.totalPipelineValue,
 		totalCommission: salesData.totalCommission,
 		pendingSales: salesData.pendingSales,
-		mortgageRates: ratesRow || null
+		mortgageRates: ratesRow || null,
+		assignableTransactions: assignableResult.results || []
 	};
 };

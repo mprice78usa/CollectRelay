@@ -42,24 +42,6 @@
 			label: 'Contractors',
 			desc: 'Construction projects, permits, and subcontractors',
 			icon: 'hardhat'
-		},
-		{
-			value: 'accountants',
-			label: 'Accountants',
-			desc: 'Tax returns, financial reviews, and client onboarding',
-			icon: 'calculator'
-		},
-		{
-			value: 'hr',
-			label: 'HR & Human Resources',
-			desc: 'Employee onboarding, benefits, and compliance',
-			icon: 'people'
-		},
-		{
-			value: 'other',
-			label: 'Other',
-			desc: 'General document collection for any industry',
-			icon: 'briefcase'
 		}
 	];
 
@@ -175,44 +157,27 @@
 				};
 			}}>
 				<input type="hidden" name="industry" value={selectedIndustry} />
-				<div class="industry-grid">
+				<div class="industry-tabs">
 					{#each industries as ind}
 						<button
 							type="button"
-							class="industry-card"
-							class:selected={selectedIndustry === ind.value}
+							class="industry-tab"
+							class:active={selectedIndustry === ind.value}
 							onclick={() => { selectedIndustry = ind.value; }}
 						>
-							<div class="industry-icon">
+							<div class="tab-icon">
 								{#if ind.icon === 'house'}
-									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+									<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 										<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
 									</svg>
-								{:else if ind.icon === 'hardhat'}
-									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M2 18h20M4 18v-3a8 8 0 0116 0v3"/><path d="M12 2v5"/><path d="M8 7h8"/>
-									</svg>
-								{:else if ind.icon === 'calculator'}
-									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-										<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="14" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="14" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="14" y1="18" x2="16" y2="18"/>
-									</svg>
-								{:else if ind.icon === 'people'}
-									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-										<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-									</svg>
 								{:else}
-									<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-										<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+									<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M2 18h20M4 18v-3a8 8 0 0116 0v3"/><path d="M12 2v5"/><path d="M8 7h8"/>
 									</svg>
 								{/if}
 							</div>
-							<span class="industry-label">{ind.label}</span>
-							<span class="industry-desc">{ind.desc}</span>
-							{#if selectedIndustry === ind.value}
-								<div class="selected-check">
-									<svg viewBox="0 0 20 20" width="20" height="20"><circle cx="10" cy="10" r="9" fill="var(--color-accent)" /><path d="M6 10l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
-								</div>
-							{/if}
+							<span class="tab-label">{ind.label}</span>
+							<span class="tab-desc">{ind.desc}</span>
 						</button>
 					{/each}
 				</div>
@@ -351,8 +316,7 @@
 
 <style>
 	/* Hide the app sidebar and expand content */
-	:global(.sidebar) { display: none !important; }
-	:global(.content) { margin-left: 0 !important; max-width: 100% !important; padding: 0 !important; }
+	/* Sidebar hiding is handled by the layout via .onboarding-mode class */
 
 	.onboarding {
 		min-height: 100vh;
@@ -445,17 +409,16 @@
 		margin: 0 0 1.5rem;
 	}
 
-	/* Industry grid */
-	.industry-grid {
-		display: grid;
-		grid-template-columns: 1fr 1fr;
+	/* Industry tabs */
+	.industry-tabs {
+		display: flex;
 		gap: 0.75rem;
 		margin-top: 0.5rem;
 	}
 
-	.industry-card {
-		position: relative;
-		text-align: left;
+	.industry-tab {
+		flex: 1;
+		text-align: center;
 		padding: 1.25rem 1rem;
 		background: var(--bg-primary);
 		border: 2px solid var(--border-color);
@@ -464,31 +427,37 @@
 		transition: border-color 0.15s, background 0.15s;
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		align-items: center;
+		gap: 0.35rem;
 	}
 
-	.industry-card:hover {
+	.industry-tab:hover {
 		border-color: var(--text-muted);
 		background: var(--bg-tertiary);
 	}
 
-	.industry-card.selected {
+	.industry-tab.active {
 		border-color: var(--color-accent);
 		background: color-mix(in srgb, var(--color-accent) 8%, var(--bg-primary));
 	}
 
-	.industry-icon {
-		color: var(--color-accent);
+	.tab-icon {
+		color: var(--text-muted);
 		margin-bottom: 0.25rem;
+		transition: color 0.15s;
 	}
 
-	.industry-label {
+	.industry-tab.active .tab-icon {
+		color: var(--color-accent);
+	}
+
+	.tab-label {
 		font-size: 0.9375rem;
 		font-weight: 600;
 		color: var(--text-primary);
 	}
 
-	.industry-desc {
+	.tab-desc {
 		font-size: 0.75rem;
 		color: var(--text-muted);
 		line-height: 1.4;
@@ -670,7 +639,7 @@
 	@media (max-width: 640px) {
 		.form-row { grid-template-columns: 1fr; }
 		.template-grid { grid-template-columns: 1fr; }
-		.industry-grid { grid-template-columns: 1fr; }
+		.industry-tabs { flex-direction: column; }
 		.onboarding-card { padding: 1.25rem; }
 		.step-line { width: 32px; }
 	}

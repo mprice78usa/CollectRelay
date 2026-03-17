@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import Badge from '$components/ui/Badge.svelte';
+	import { getTerms } from '$lib/terminology';
 
 	let { data, form } = $props();
+
+	let terms = $derived(getTerms(data.industry));
 
 	let selectedTemplateId = $state('');
 	let clientName = $state('');
@@ -81,7 +84,7 @@
 </script>
 
 <svelte:head>
-	<title>New Transaction — CollectRelay</title>
+	<title>{terms.newTransaction} — CollectRelay</title>
 </svelte:head>
 
 <div class="new-transaction-page">
@@ -90,10 +93,10 @@
 			<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 				<path d="M19 12H5M12 19l-7-7 7-7" />
 			</svg>
-			Back to Transactions
+			{terms.backToList}
 		</a>
-		<h1>New Transaction</h1>
-		<p class="subtitle">Create a new document collection request for your client.</p>
+		<h1>{terms.newTransaction}</h1>
+		<p class="subtitle">Create a new {terms.request.toLowerCase()} for your client.</p>
 	</div>
 
 	{#if form?.error === 'trial_expired'}
@@ -159,7 +162,7 @@
 				</div>
 
 				<div class="form-section">
-					<h2>Transaction Details</h2>
+					<h2>{terms.transaction} Details</h2>
 					<div class="field">
 						<label for="title">Title <span class="required">*</span></label>
 						<input type="text" id="title" name="title" bind:value={title} placeholder="e.g. 123 Main St — Buyer Package" required />
@@ -231,7 +234,7 @@
 				<div class="form-actions">
 					<a href="/app/transactions" class="btn-secondary">Cancel</a>
 					<button type="submit" class="btn-primary" disabled={loading || !selectedTemplateId}>
-						{loading ? 'Creating…' : 'Create Transaction'}
+						{loading ? 'Creating…' : `Create ${terms.transaction}`}
 					</button>
 				</div>
 			</div>

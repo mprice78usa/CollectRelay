@@ -7,15 +7,16 @@ import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals, platform }) => {
 	const user = locals.user;
-	if (!user) return { user: null, billing: null, isAdmin: false, totalUnseenCount: 0, unreadNotificationCount: 0 };
+	if (!user) return { user: null, billing: null, isAdmin: false, totalUnseenCount: 0, unreadNotificationCount: 0, industry: null };
 
 	const db = platform?.env?.DB;
 
-	// Auto-clone starter templates on first visit (if DB available)
-	// Skip during onboarding — templates are cloned in the setIndustry action instead
+	// Load workspace industry (used for terminology + template cloning)
+	let industry: string | null = null;
 	if (db && user.workspaceId) {
 		const ws = await db.prepare('SELECT industry, onboarding_completed FROM workspaces WHERE id = ?')
 			.bind(user.workspaceId).first<{ industry: string; onboarding_completed: number }>();
+		industry = ws?.industry || null;
 		if (ws?.onboarding_completed === 1) {
 			const hasTemplates = await workspaceHasTemplates(db, user.workspaceId);
 			if (!hasTemplates) {
@@ -77,5 +78,5 @@ export const load: LayoutServerLoad = async ({ locals, platform }) => {
 		}
 	}
 
-	return { user, billing, isAdmin, totalUnseenCount, unreadNotificationCount };
+	return { user, billing, isAdmin, totalUnseenCount, unreadNotificationCount, industry };
 };

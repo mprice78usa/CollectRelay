@@ -5,8 +5,11 @@
 	import Spinner from '$components/ui/Spinner.svelte';
 	import ActivityToast from '$components/ui/ActivityToast.svelte';
 	import FilePreview from '$components/ui/FilePreview.svelte';
+	import { getTerms } from '$lib/terminology';
 
 	let { data, form } = $props();
+
+	let terms = $derived(getTerms(data.industry));
 
 	let txn = $derived(data.transaction);
 	let rejectItemId = $state<string | null>(null);
@@ -83,6 +86,49 @@
 			setTimeout(() => { uploadProgress = null; uploadingItemId = null; }, 2000);
 		}
 		input.value = '';
+	}
+
+	// Attach from library
+	let showLibraryModal = $state(false);
+	let libraryTargetItemId = $state<string | null>(null);
+	let attachingDocId = $state<string | null>(null);
+
+	function openLibraryModal(itemId: string) {
+		libraryTargetItemId = itemId;
+		showLibraryModal = true;
+	}
+
+	async function attachFromLibrary(documentId: string) {
+		if (!libraryTargetItemId) return;
+		attachingDocId = documentId;
+
+		try {
+			const res = await fetch('/api/attach-from-library', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					documentId,
+					checklistItemId: libraryTargetItemId,
+					transactionId: txn.id
+				})
+			});
+
+			if (!res.ok) {
+				const errData = await res.json().catch(() => ({ message: 'Failed to attach' }));
+				alert(errData.message || 'Failed to attach document');
+				attachingDocId = null;
+				return;
+			}
+
+			showLibraryModal = false;
+			attachingDocId = null;
+			libraryTargetItemId = null;
+			const { invalidateAll } = await import('$app/navigation');
+			await invalidateAll();
+		} catch {
+			alert('Failed to attach document');
+			attachingDocId = null;
+		}
 	}
 
 	// Invite collaborator
@@ -249,6 +295,185 @@
 		copiedLink = true;
 		setTimeout(() => copiedLink = false, 2000);
 	}
+
+	// Voice recording state
+	type VoiceState = 'idle' | 'recording' | 'uploading' | 'processing' | 'review' | 'done' | 'error';
+	let voiceState = $state<VoiceState>('idle');
+	let recordingDuration = $state(0);
+	let recordingTimer: ReturnType<typeof setInterval> | null = null;
+	let mediaRecorder: MediaRecorder | null = null;
+	let audioChunks: Blob[] = [];
+	let voiceNoteId = $state<string | null>(null);
+	let voiceResult = $state<{ transcript: string; actions: any } | null>(null);
+	let voiceError = $state<string | null>(null);
+	let relayLoading = $state(false);
+	let selectedActions = $state<Set<number>>(new Set());
+	let pollingTimer: ReturnType<typeof setInterval> | null = null;
+	let showVoiceHistory = $state(false);
+	let editableActions = $state<Array<{ task: string; priority: string }>>([]);
+	let editableSummary = $state('');
+	let expandedVoiceNote = $state<Set<string>>(new Set());
+	let expandedPhotoNote = $state<Set<string>>(new Set());
+
+	async function startRecording() {
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			audioChunks = [];
+			mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+
+			mediaRecorder.ondataavailable = (e) => {
+				if (e.data.size > 0) audioChunks.push(e.data);
+			};
+
+			mediaRecorder.onstop = async () => {
+				stream.getTracks().forEach(t => t.stop());
+				if (recordingTimer) { clearInterval(recordingTimer); recordingTimer = null; }
+				const blob = new Blob(audioChunks, { type: 'audio/webm' });
+				await uploadVoiceNote(blob);
+			};
+
+			mediaRecorder.start(250); // collect in 250ms chunks
+			voiceState = 'recording';
+			recordingDuration = 0;
+			recordingTimer = setInterval(() => {
+				recordingDuration++;
+				if (recordingDuration >= 120) stopRecording();
+			}, 1000);
+		} catch (err) {
+			voiceError = 'Microphone access denied. Please allow microphone access and try again.';
+			voiceState = 'error';
+		}
+	}
+
+	function stopRecording() {
+		if (mediaRecorder && mediaRecorder.state === 'recording') {
+			mediaRecorder.stop();
+		}
+	}
+
+	async function uploadVoiceNote(blob: Blob) {
+		voiceState = 'uploading';
+		try {
+			const formData = new FormData();
+			formData.append('audio', blob, 'recording.webm');
+			formData.append('transactionId', txn.id);
+			formData.append('duration', recordingDuration.toString());
+
+			const res = await fetch('/api/voice-note', { method: 'POST', body: formData });
+			if (!res.ok) {
+				const err = await res.json().catch(() => ({ message: 'Upload failed' }));
+				throw new Error(err.message || 'Upload failed');
+			}
+
+			const result = await res.json();
+			voiceNoteId = result.id;
+			voiceState = 'processing';
+			startPolling();
+		} catch (err: any) {
+			voiceError = err.message || 'Upload failed';
+			voiceState = 'error';
+		}
+	}
+
+	function startPolling() {
+		let elapsed = 0;
+		pollingTimer = setInterval(async () => {
+			elapsed += 2;
+			if (elapsed > 60 || !voiceNoteId) {
+				if (pollingTimer) clearInterval(pollingTimer);
+				voiceError = 'Processing timed out. Please try again.';
+				voiceState = 'error';
+				return;
+			}
+
+			try {
+				const res = await fetch(`/api/voice-note/${voiceNoteId}`);
+				if (!res.ok) return;
+				const data = await res.json();
+
+				if (data.status === 'completed') {
+					if (pollingTimer) clearInterval(pollingTimer);
+					voiceResult = { transcript: data.transcript, actions: data.actions };
+					// Initialize editable copies
+					editableActions = (data.actions?.new_actions || []).map((a: any) => ({ task: a.task, priority: a.priority || 'Medium' }));
+					editableSummary = data.actions?.summary || '';
+					selectedActions = new Set(editableActions.map((_: any, i: number) => i));
+					voiceState = 'review';
+				} else if (data.status === 'failed') {
+					if (pollingTimer) clearInterval(pollingTimer);
+					voiceError = 'Processing failed. Please try again.';
+					voiceState = 'error';
+				}
+			} catch { /* keep polling */ }
+		}, 2000);
+	}
+
+	function addEditableAction() {
+		editableActions = [...editableActions, { task: '', priority: 'Medium' }];
+		selectedActions = new Set([...selectedActions, editableActions.length - 1]);
+	}
+
+	function removeEditableAction(index: number) {
+		editableActions = editableActions.filter((_, i) => i !== index);
+		const next = new Set<number>();
+		for (const i of selectedActions) {
+			if (i < index) next.add(i);
+			else if (i > index) next.add(i - 1);
+		}
+		selectedActions = next;
+	}
+
+	async function relayActions() {
+		if (!voiceNoteId || editableActions.length === 0) return;
+		relayLoading = true;
+
+		const actions = editableActions
+			.filter((_, i) => selectedActions.has(i))
+			.filter(a => a.task.trim());
+
+		if (actions.length === 0) {
+			voiceState = 'done';
+			relayLoading = false;
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/voice-note/${voiceNoteId}/relay`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ actions, summary: editableSummary })
+			});
+
+			if (res.ok) {
+				voiceState = 'done';
+				const { invalidateAll } = await import('$app/navigation');
+				await invalidateAll();
+			} else {
+				voiceError = 'Failed to relay actions';
+				voiceState = 'error';
+			}
+		} catch {
+			voiceError = 'Failed to relay actions';
+			voiceState = 'error';
+		}
+		relayLoading = false;
+	}
+
+	function resetVoice() {
+		voiceState = 'idle';
+		voiceNoteId = null;
+		voiceResult = null;
+		voiceError = null;
+		selectedActions = new Set();
+		recordingDuration = 0;
+		if (pollingTimer) { clearInterval(pollingTimer); pollingTimer = null; }
+	}
+
+	function formatDuration(seconds: number): string {
+		const m = Math.floor(seconds / 60);
+		const s = seconds % 60;
+		return `${m}:${s.toString().padStart(2, '0')}`;
+	}
 </script>
 
 <svelte:head>
@@ -261,7 +486,7 @@
 			<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
 				<path d="M19 12H5M12 19l-7-7 7-7" />
 			</svg>
-			Back to Transactions
+			{terms.backToList}
 		</a>
 	</div>
 
@@ -401,6 +626,14 @@
 		{/if}
 
 		<div class="header-actions">
+			{#if voiceState === 'idle' && !['completed', 'cancelled'].includes(txn.status)}
+				<button class="btn-field-report" onclick={startRecording}>
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+					</svg>
+					Field Report
+				</button>
+			{/if}
 			<button class="btn-outline-sm" onclick={() => showInvite = true}>
 				<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 					<path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" />
@@ -484,15 +717,181 @@
 		{/if}
 	</div>
 
+	<!-- Voice Recording UI -->
+	{#if voiceState === 'recording'}
+		<div class="voice-card voice-recording">
+			<div class="voice-card-header">
+				<div class="voice-pulse"></div>
+				<span class="voice-label">Recording...</span>
+				<span class="voice-duration">{formatDuration(recordingDuration)}</span>
+			</div>
+			<div class="voice-waveform">
+				{#each Array(20) as _, i}
+					<div class="wave-bar" style="animation-delay: {i * 0.05}s"></div>
+				{/each}
+			</div>
+			{#if recordingDuration >= 100}
+				<p class="voice-warn">Recording will stop at 2:00</p>
+			{/if}
+			<button class="btn-stop-recording" onclick={stopRecording}>
+				<svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+				Stop Recording
+			</button>
+		</div>
+	{:else if voiceState === 'uploading'}
+		<div class="voice-card voice-uploading">
+			<Spinner size={24} />
+			<span>Uploading audio...</span>
+		</div>
+	{:else if voiceState === 'processing'}
+		<div class="voice-card voice-processing">
+			<div class="voice-waveform processing-wave">
+				{#each Array(20) as _, i}
+					<div class="wave-bar" style="animation-delay: {i * 0.05}s"></div>
+				{/each}
+			</div>
+			<span class="voice-label">Relaying your notes...</span>
+			<p class="voice-sublabel">Transcribing audio and extracting tasks</p>
+		</div>
+	{:else if voiceState === 'review' && voiceResult}
+		<div class="voice-card voice-review">
+			<div class="voice-review-header">
+				<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+				</svg>
+				<h3>Field Report</h3>
+			</div>
+			{#if voiceResult.transcript}
+				<div class="voice-transcript">
+					<p>"{voiceResult.transcript}"</p>
+				</div>
+			{/if}
+			<div class="voice-summary-edit">
+				<label class="voice-edit-label">Summary</label>
+				<textarea class="voice-summary-textarea" bind:value={editableSummary} rows="2" placeholder="AI-generated summary..."></textarea>
+			</div>
+			{#if editableActions.length > 0}
+				<div class="voice-actions-list">
+					<h4>Proposed Actions</h4>
+					{#each editableActions as action, i}
+						<div class="voice-action-item">
+							<input
+								type="checkbox"
+								checked={selectedActions.has(i)}
+								onchange={() => {
+									const next = new Set(selectedActions);
+									if (next.has(i)) next.delete(i); else next.add(i);
+									selectedActions = next;
+								}}
+							/>
+							<div class="voice-action-detail">
+								<input type="text" class="voice-action-input" bind:value={editableActions[i].task} placeholder="Task description..." />
+								<select class="voice-priority-select" bind:value={editableActions[i].priority}>
+									<option value="High">High</option>
+									<option value="Medium">Medium</option>
+									<option value="Low">Low</option>
+								</select>
+								<button type="button" class="btn-remove-action" onclick={() => removeEditableAction(i)} title="Remove task">
+									<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+								</button>
+							</div>
+						</div>
+					{/each}
+					<button type="button" class="btn-add-action" onclick={addEditableAction}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+						Add Task
+					</button>
+				</div>
+			{:else}
+				<div class="voice-actions-list">
+					<h4>No actions extracted</h4>
+					<button type="button" class="btn-add-action" onclick={addEditableAction}>
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+						Add Task Manually
+					</button>
+				</div>
+			{/if}
+			{#if voiceResult.actions?.blockers?.length > 0}
+				<div class="voice-blockers">
+					{#each voiceResult.actions.blockers as blocker}
+						<div class="voice-blocker-item">
+							<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+							<span>{blocker}</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+			<div class="voice-review-actions">
+				<button class="btn-outline-sm" onclick={resetVoice}>Discard</button>
+				<button class="btn-relay" onclick={relayActions} disabled={relayLoading || selectedActions.size === 0}>
+					{relayLoading ? 'Relaying...' : `Relay ${selectedActions.size} Task${selectedActions.size === 1 ? '' : 's'}`}
+					{#if !relayLoading}
+						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+					{/if}
+				</button>
+			</div>
+		</div>
+	{:else if voiceState === 'done'}
+		<div class="voice-card voice-done">
+			<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+			<span>Tasks added from field report</span>
+			<button class="btn-outline-sm" onclick={resetVoice}>Done</button>
+		</div>
+	{:else if voiceState === 'error'}
+		<div class="voice-card voice-error">
+			<span>{voiceError}</span>
+			<button class="btn-outline-sm" onclick={resetVoice}>Try Again</button>
+		</div>
+	{/if}
+
+	<!-- Voice Notes History -->
+	{#if data.voiceNotes?.length > 0}
+		<div class="voice-history-section">
+			<button class="voice-history-toggle" onclick={() => showVoiceHistory = !showVoiceHistory}>
+				<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+				</svg>
+				Voice Notes ({data.voiceNotes.length})
+				<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class:rotated={showVoiceHistory}><polyline points="6 9 12 15 18 9"/></svg>
+			</button>
+			{#if showVoiceHistory}
+				<div class="voice-history-list">
+					{#each data.voiceNotes as note}
+						<div class="voice-history-item">
+							<div class="voice-history-meta">
+								<span class="voice-history-date">{formatDate(note.created_at)}</span>
+								{#if note.duration_seconds}
+									<span class="voice-history-duration">{formatDuration(note.duration_seconds)}</span>
+								{/if}
+								{#if note.is_relayed}
+									<Badge variant="success">Relayed</Badge>
+								{:else if note.ai_status === 'completed'}
+									<Badge variant="warning">Pending</Badge>
+								{:else if note.ai_status === 'failed'}
+									<Badge variant="error">Failed</Badge>
+								{:else}
+									<Badge variant="default">Processing</Badge>
+								{/if}
+							</div>
+							{#if note.transcript}
+								<p class="voice-history-transcript">{note.transcript}</p>
+							{/if}
+						</div>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
+
 	<!-- Checklist items -->
 	<div class="checklist-section">
 		<div class="checklist-header-row">
-			<h2>Checklist Items</h2>
+			<h2>{terms.checklistItems}</h2>
 			{#if txn.items.some(i => i.status === 'submitted')}
 				<form method="POST" action="?/acceptAllSubmitted" use:enhance>
 					<button type="submit" class="btn-accept-all" onclick={(e) => {
 						const count = txn.items.filter(i => i.status === 'submitted').length;
-						if (!confirm(`Accept all ${count} submitted item(s)?`)) e.preventDefault();
+						if (!confirm(`Accept all ${count} submitted ${terms.itemsProgress}?`)) e.preventDefault();
 					}}>
 						<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<polyline points="20 6 9 17 4 12" />
@@ -534,6 +933,78 @@
 
 					{#if item.description}
 						<p class="item-description">{item.description}</p>
+					{/if}
+
+					{#if item.voice_note_id}
+						{@const vnote = data.voiceNotes?.find((n: any) => n.id === item.voice_note_id)}
+						{#if vnote}
+							<div class="voice-note-context">
+								<button type="button" class="voice-note-context-toggle" onclick={() => {
+									const next = new Set(expandedVoiceNote);
+									if (next.has(item.id)) next.delete(item.id); else next.add(item.id);
+									expandedVoiceNote = next;
+								}}>
+									<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+									</svg>
+									Field Report
+									<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class:rotated={expandedVoiceNote.has(item.id)}><polyline points="6 9 12 15 18 9"/></svg>
+								</button>
+								{#if expandedVoiceNote.has(item.id)}
+									<div class="voice-note-context-body">
+										{#if vnote.transcript}
+											<p class="context-label">Transcript</p>
+											<p>{vnote.transcript}</p>
+										{/if}
+										{#if vnote.ai_actions}
+											{@const parsedActions = JSON.parse(vnote.ai_actions)}
+											{#if parsedActions?.summary}
+												<p class="context-label">Summary</p>
+												<p>{parsedActions.summary}</p>
+											{/if}
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/if}
+					{/if}
+
+					{#if item.photo_note_id}
+						{@const pnote = data.photoNotes?.find((n: any) => n.id === item.photo_note_id)}
+						{#if pnote}
+							<div class="voice-note-context">
+								<button type="button" class="voice-note-context-toggle" onclick={() => {
+									const next = new Set(expandedPhotoNote);
+									if (next.has(item.id)) next.delete(item.id); else next.add(item.id);
+									expandedPhotoNote = next;
+								}}>
+									<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+										<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+									</svg>
+									Site Photo
+									<svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class:rotated={expandedPhotoNote.has(item.id)}><polyline points="6 9 12 15 18 9"/></svg>
+								</button>
+								{#if expandedPhotoNote.has(item.id)}
+									<div class="voice-note-context-body">
+										{#if pnote.notes}
+											<p class="context-label">Notes</p>
+											<p>{pnote.notes}</p>
+										{/if}
+										{#if pnote.ai_description}
+											<p class="context-label">AI Description</p>
+											<p>{pnote.ai_description}</p>
+										{/if}
+										{#if pnote.ai_actions}
+											{@const parsedActions = JSON.parse(pnote.ai_actions)}
+											{#if parsedActions?.summary}
+												<p class="context-label">Summary</p>
+												<p>{parsedActions.summary}</p>
+											{/if}
+										{/if}
+									</div>
+								{/if}
+							</div>
+						{/if}
 					{/if}
 
 					<!-- Show answer for question/checkbox items -->
@@ -600,6 +1071,14 @@
 										Upload document
 										<input type="file" class="sr-only" onchange={(e) => handleProUpload(e, item.id)} />
 									</label>
+									{#if data.libraryDocs.length > 0}
+										<button class="upload-btn-inline attach-library-btn" onclick={() => openLibraryModal(item.id)}>
+											<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="12" y1="18" x2="12" y2="12" /><line x1="9" y1="15" x2="15" y2="15" />
+											</svg>
+											Attach from Library
+										</button>
+									{/if}
 								{/if}
 							</div>
 						{/if}
@@ -846,6 +1325,42 @@
 		<button type="submit" class="btn-accept">Invite Partner</button>
 	</form>
 </div>
+
+<!-- Attach from Library Modal -->
+<Modal bind:open={showLibraryModal} title="Attach from Document Library">
+	<p class="library-modal-hint">Select a document to attach to this checklist item.</p>
+	{#if data.libraryDocs.length === 0}
+		<p class="empty-library">No documents with files in your library. Generate or upload documents in the Document Center first.</p>
+	{:else}
+		<div class="library-doc-list">
+			{#each data.libraryDocs as doc}
+				<button
+					class="library-doc-item"
+					class:attaching={attachingDocId === doc.id}
+					disabled={attachingDocId !== null}
+					onclick={() => attachFromLibrary(doc.id)}
+				>
+					<div class="library-doc-info">
+						<span class="library-doc-name">{doc.name}</span>
+						<span class="library-doc-meta">
+							{doc.filename}
+							{#if doc.file_size}
+								&middot; {formatFileSize(doc.file_size)}
+							{/if}
+						</span>
+					</div>
+					{#if attachingDocId === doc.id}
+						<Spinner size={14} />
+					{:else}
+						<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+							<path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+						</svg>
+					{/if}
+				</button>
+			{/each}
+		</div>
+	{/if}
+</Modal>
 
 <!-- Add Item Modal -->
 <Modal bind:open={showAddItem} title="Add Checklist Item">
@@ -2028,11 +2543,6 @@
 	}
 
 	/* Pro upload */
-	.pro-upload {
-		margin-left: 40px;
-		margin-top: var(--space-sm);
-	}
-
 	.upload-btn-inline {
 		display: inline-flex;
 		align-items: center;
@@ -2045,6 +2555,104 @@
 	}
 
 	.upload-btn-inline:hover {
+		color: var(--color-accent);
+	}
+
+	.pro-upload {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		margin-left: 40px;
+		margin-top: var(--space-sm);
+	}
+
+	.attach-library-btn {
+		background: none;
+		border: none;
+		font-family: inherit;
+	}
+
+	/* Library modal styles */
+	.library-modal-hint {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		margin-bottom: var(--space-md);
+	}
+
+	.empty-library {
+		color: var(--text-tertiary);
+		font-size: var(--font-size-sm);
+		text-align: center;
+		padding: var(--space-xl) 0;
+	}
+
+	.library-doc-list {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
+	.library-doc-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-subtle);
+		border-radius: var(--radius-sm);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+		text-align: left;
+		font-family: inherit;
+		color: var(--text-primary);
+	}
+
+	.library-doc-item:hover:not(:disabled) {
+		border-color: var(--color-accent);
+		background: rgba(74, 122, 245, 0.05);
+	}
+
+	.library-doc-item:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.library-doc-item.attaching {
+		border-color: var(--color-accent);
+	}
+
+	.library-doc-info {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+
+	.library-doc-name {
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.library-doc-meta {
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.library-doc-item svg {
+		flex-shrink: 0;
+		color: var(--text-tertiary);
+	}
+
+	.library-doc-item:hover:not(:disabled) svg {
 		color: var(--color-accent);
 	}
 
@@ -2477,5 +3085,409 @@
 		flex-wrap: wrap;
 		padding-top: var(--space-lg);
 		border-top: 1px solid var(--border-color);
+	}
+
+	/* Field Report button */
+	.btn-field-report {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: 6px 14px;
+		background: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+		border: 1px solid rgba(239, 68, 68, 0.3);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: all var(--transition-fast);
+	}
+	.btn-field-report:hover {
+		background: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.5);
+	}
+
+	/* Voice card (shared) */
+	.voice-card {
+		padding: var(--space-xl);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-lg);
+		margin-bottom: var(--space-xl);
+	}
+
+	/* Recording state */
+	.voice-recording {
+		border-color: rgba(239, 68, 68, 0.3);
+		background: rgba(239, 68, 68, 0.04);
+		text-align: center;
+	}
+	.voice-card-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-md);
+		margin-bottom: var(--space-lg);
+	}
+	.voice-pulse {
+		width: 12px;
+		height: 12px;
+		background: #ef4444;
+		border-radius: 50%;
+		animation: pulse 1s ease-in-out infinite;
+	}
+	@keyframes pulse {
+		0%, 100% { opacity: 1; transform: scale(1); }
+		50% { opacity: 0.5; transform: scale(1.2); }
+	}
+	.voice-label {
+		font-size: var(--font-size-md);
+		font-weight: 600;
+	}
+	.voice-duration {
+		font-size: var(--font-size-lg);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		color: #ef4444;
+	}
+	.voice-waveform {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 3px;
+		height: 40px;
+		margin-bottom: var(--space-lg);
+	}
+	.wave-bar {
+		width: 3px;
+		background: #ef4444;
+		border-radius: 2px;
+		animation: wave 0.8s ease-in-out infinite alternate;
+	}
+	.processing-wave .wave-bar {
+		background: var(--color-accent);
+	}
+	@keyframes wave {
+		0% { height: 8px; }
+		100% { height: 32px; }
+	}
+	.voice-warn {
+		font-size: var(--font-size-xs);
+		color: #f59e0b;
+		margin-bottom: var(--space-md);
+	}
+	.btn-stop-recording {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-xl);
+		background: #ef4444;
+		color: white;
+		border: none;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+	.btn-stop-recording:hover { background: #dc2626; }
+
+	/* Uploading / Processing */
+	.voice-uploading, .voice-processing {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+		text-align: center;
+	}
+	.voice-sublabel {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+	}
+
+	/* Review card */
+	.voice-review {
+		border-color: rgba(74, 122, 245, 0.3);
+		background: rgba(74, 122, 245, 0.04);
+	}
+	.voice-review-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-lg);
+		color: #4a7af5;
+	}
+	.voice-review-header h3 {
+		font-size: var(--font-size-md);
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+	.voice-transcript {
+		padding: var(--space-md);
+		background: var(--bg-tertiary);
+		border-radius: var(--radius-md);
+		margin-bottom: var(--space-lg);
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		line-height: 1.6;
+		font-style: italic;
+	}
+	.voice-summary-edit {
+		margin-bottom: var(--space-lg);
+	}
+	.voice-edit-label {
+		display: block;
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-secondary);
+		margin-bottom: var(--space-xs);
+	}
+	.voice-summary-textarea {
+		width: 100%;
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-sm) var(--space-md);
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		font-family: inherit;
+		resize: vertical;
+	}
+	.voice-summary-textarea:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+	.voice-actions-list {
+		margin-bottom: var(--space-lg);
+	}
+	.voice-actions-list h4 {
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-secondary);
+		margin-bottom: var(--space-md);
+	}
+	.voice-action-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-sm) var(--space-md);
+		border-radius: var(--radius-md);
+		transition: background var(--transition-fast);
+	}
+	.voice-action-item:hover {
+		background: var(--bg-tertiary);
+	}
+	.voice-action-item input[type="checkbox"] {
+		width: 16px;
+		height: 16px;
+		accent-color: var(--color-accent);
+		flex-shrink: 0;
+	}
+	.voice-action-detail {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		flex: 1;
+	}
+	.voice-action-input {
+		flex: 1;
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-xs) var(--space-sm);
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		font-family: inherit;
+	}
+	.voice-action-input:focus {
+		outline: none;
+		border-color: var(--color-accent);
+	}
+	.voice-priority-select {
+		background: var(--bg-tertiary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-xs) var(--space-sm);
+		font-size: var(--font-size-xs);
+		color: var(--text-primary);
+		cursor: pointer;
+	}
+	.btn-remove-action {
+		background: none;
+		border: none;
+		color: var(--text-muted);
+		cursor: pointer;
+		padding: 2px;
+		border-radius: var(--radius-sm);
+		transition: color var(--transition-fast);
+		flex-shrink: 0;
+	}
+	.btn-remove-action:hover {
+		color: #ef4444;
+	}
+	.btn-add-action {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		background: none;
+		border: 1px dashed var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-sm) var(--space-md);
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		cursor: pointer;
+		width: 100%;
+		margin-top: var(--space-sm);
+		transition: all var(--transition-fast);
+	}
+	.btn-add-action:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+	.voice-note-context {
+		margin-top: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: rgba(74, 122, 245, 0.05);
+		border: 1px solid rgba(74, 122, 245, 0.15);
+		border-radius: var(--radius-md);
+	}
+	.voice-note-context-toggle {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+		background: none;
+		border: none;
+		color: var(--color-accent);
+		font-size: var(--font-size-xs);
+		cursor: pointer;
+		padding: 0;
+	}
+	.voice-note-context-toggle:hover {
+		text-decoration: underline;
+	}
+	.voice-note-context-body {
+		margin-top: var(--space-sm);
+	}
+	.voice-note-context-body p {
+		font-size: var(--font-size-xs);
+		color: var(--text-secondary);
+		margin-bottom: var(--space-xs);
+	}
+	.voice-note-context-body .context-label {
+		font-weight: 600;
+		color: var(--text-muted);
+		text-transform: uppercase;
+		letter-spacing: 0.03em;
+	}
+	.voice-blockers {
+		margin-bottom: var(--space-lg);
+	}
+	.voice-blocker-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-md);
+		background: rgba(245, 158, 11, 0.08);
+		border-radius: var(--radius-md);
+		color: #f59e0b;
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		margin-bottom: var(--space-xs);
+	}
+	.voice-review-actions {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: var(--space-md);
+		padding-top: var(--space-lg);
+		border-top: 1px solid var(--border-color);
+	}
+	.btn-relay {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-xl);
+		background: var(--color-accent);
+		color: var(--text-inverse);
+		border: none;
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		border-radius: var(--radius-md);
+		cursor: pointer;
+		transition: background var(--transition-fast);
+	}
+	.btn-relay:hover:not(:disabled) { background: var(--color-accent-hover); }
+	.btn-relay:disabled { opacity: 0.5; cursor: not-allowed; }
+
+	/* Done / Error states */
+	.voice-done, .voice-error {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+	}
+	.voice-done { color: #10b981; }
+	.voice-error { color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+
+	/* Voice history */
+	.voice-history-section {
+		margin-bottom: var(--space-xl);
+	}
+	.voice-history-toggle {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		background: none;
+		border: none;
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		cursor: pointer;
+		padding: var(--space-sm) 0;
+		transition: color var(--transition-fast);
+	}
+	.voice-history-toggle:hover { color: var(--text-primary); }
+	.voice-history-toggle svg.rotated { transform: rotate(180deg); }
+	.voice-history-list {
+		margin-top: var(--space-md);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+	.voice-history-item {
+		padding: var(--space-md);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+	}
+	.voice-history-meta {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		margin-bottom: var(--space-xs);
+	}
+	.voice-history-date {
+		font-size: var(--font-size-xs);
+		color: var(--text-tertiary);
+	}
+	.voice-history-duration {
+		font-size: var(--font-size-xs);
+		color: var(--text-secondary);
+		font-variant-numeric: tabular-nums;
+	}
+	.voice-history-transcript {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		line-height: 1.5;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
 	}
 </style>

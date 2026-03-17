@@ -1,5 +1,6 @@
 /** Email sending via Resend API */
 import { escapeHtml } from '$lib/server/sanitize';
+import { getTerms } from '$lib/terminology';
 
 /** Extract bare email address from formats like "Name <email>" or plain "email" */
 function extractEmail(from: string): string {
@@ -13,6 +14,7 @@ interface SendMagicLinkEmailParams {
 	proName: string;
 	transactionTitle: string;
 	magicLinkUrl: string;
+	industry?: string;
 }
 
 export async function sendMagicLinkEmail(
@@ -37,6 +39,11 @@ export async function sendMagicLinkEmail(
 	const safeProName = escapeHtml(params.proName);
 	const safeTitle = escapeHtml(params.transactionTitle);
 	const safeUrl = escapeHtml(params.magicLinkUrl);
+	const terms = getTerms(params.industry);
+	const emailHeading = params.industry === 'contractors' ? 'Submittals Requested' : 'Documents Requested';
+	const emailBody = params.industry === 'contractors'
+		? `${safeProName} has requested submittals from you for:`
+		: `${safeProName} has requested documents from you for:`;
 
 	const html = `
 <!DOCTYPE html>
@@ -44,9 +51,9 @@ export async function sendMagicLinkEmail(
 <head><meta charset="utf-8"></head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f4f5; padding: 40px 20px;">
   <div style="max-width: 480px; margin: 0 auto; background: white; border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-    <h1 style="font-size: 20px; margin: 0 0 8px; color: #18181b;">Documents Requested</h1>
+    <h1 style="font-size: 20px; margin: 0 0 8px; color: #18181b;">${emailHeading}</h1>
     <p style="color: #71717a; margin: 0 0 24px; font-size: 15px;">
-      ${safeProName} has requested documents from you for:
+      ${emailBody}
     </p>
     <div style="background: #f4f4f5; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
       <strong style="color: #18181b;">${safeTitle}</strong>

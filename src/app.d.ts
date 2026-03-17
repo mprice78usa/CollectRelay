@@ -40,6 +40,7 @@ declare global {
 				TWILIO_AUTH_TOKEN: string;
 				TWILIO_PHONE_NUMBER: string;
 				AI: Ai;
+				ANTHROPIC_API_KEY: string;
 				VAPID_PUBLIC_KEY: string;
 				VAPID_PRIVATE_KEY: string;
 			};

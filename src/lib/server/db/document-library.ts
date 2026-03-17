@@ -14,16 +14,18 @@ export interface DbDocumentLibraryItem {
 	is_system: number;
 	created_by: string;
 	created_at: string;
+	external_url: string | null;
 }
 
 export async function getDocumentLibrary(
 	db: D1Database,
 	workspaceId: string,
-	category?: string
+	category?: string,
+	industry?: string
 ): Promise<DbDocumentLibraryItem[]> {
-	// Get workspace docs + system docs, ordered by category then name
-	let query = "SELECT * FROM document_library WHERE (workspace_id = ? OR workspace_id = 'SYSTEM')";
-	const params: any[] = [workspaceId];
+	// Get workspace docs + industry-specific system docs
+	let query = "SELECT * FROM document_library WHERE (workspace_id = ? OR (workspace_id = 'SYSTEM' AND (industry = ? OR industry IS NULL)))";
+	const params: any[] = [workspaceId, industry || 'real_estate'];
 	if (category) {
 		query += ' AND category = ?';
 		params.push(category);

@@ -3,8 +3,7 @@
 
 	const tabs = [
 		{ id: 'real-estate', label: 'Real Estate' },
-		{ id: 'contractors', label: 'Contractors' },
-		{ id: 'accountants', label: 'Accountants' }
+		{ id: 'contractors', label: 'Contractors' }
 	];
 
 	const industries: Record<string, {
@@ -64,30 +63,6 @@
 				]
 			}
 		},
-		accountants: {
-			badge: 'Accountants',
-			heading: 'Streamlined for tax & advisory',
-			description: 'Tax returns, K-1s, bank statements, and engagement letters. Get every document you need from clients before the deadline crunch hits.',
-			useCases: [
-				'Annual tax document collection (W-2, 1099, K-1)',
-				'Bank and brokerage statement requests',
-				'New client onboarding and engagement letters',
-				'Quarterly estimated tax documentation'
-			],
-			ctaLabel: 'Explore accountant features',
-			ctaHref: '/industries/accountants',
-			mock: {
-				title: 'Tax Return — Johnson Family',
-				progress: '4 of 7',
-				items: [
-					{ name: 'W-2 forms (all employers)', status: 'Accepted', state: 'accepted' },
-					{ name: '1099 interest income', status: 'Accepted', state: 'accepted' },
-					{ name: 'Mortgage interest (1098)', status: 'Accepted', state: 'accepted' },
-					{ name: 'Charitable receipts', status: 'In review', state: 'submitted' },
-					{ name: 'K-1 partnership income', status: 'Missing', state: 'missing' }
-				]
-			}
-		}
 	};
 
 	$effect(() => {
@@ -111,9 +86,6 @@
 					onclick={() => (activeTab = tab.id)}
 				>
 					{tab.label}
-					{#if tab.id !== 'real-estate'}
-						<span class="soon-tag">Soon</span>
-					{/if}
 				</button>
 			{/each}
 		</div>
