@@ -15,6 +15,13 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	if (!db || !bucket) throw error(503, 'Storage not available');
 	if (!user?.workspaceId) throw error(401, 'Unauthorized');
 
+	// Offline sync dedup
+	const syncId = request.headers.get('X-Sync-Id');
+	if (syncId) {
+		const dup = await db.prepare('SELECT note_id FROM sync_log WHERE id = ? AND note_type = ?').bind(syncId, 'photo').first<{ note_id: string }>();
+		if (dup) return json({ id: dup.note_id, status: 'completed', deduplicated: true });
+	}
+
 	const formData = await request.formData();
 	const photo = formData.get('photo') as File;
 	const transactionId = formData.get('transactionId') as string;
@@ -57,6 +64,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		`INSERT INTO photo_notes (id, transaction_id, created_by, r2_key, filename, file_size, mime_type, title, notes, ai_status)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	).bind(noteId, transactionId, user.id, r2Key, filename, photo.size, photo.type, title, notes, analyzeWithAI ? 'pending' : 'none').run();
+
+	// Record sync dedup entry
+	if (syncId) {
+		await db.prepare('INSERT INTO sync_log (id, client_id, note_type, note_id) VALUES (?, ?, ?, ?)')
+			.bind(syncId, syncId.split(':')[0], 'photo', noteId).run();
+	}
 
 	// If AI analysis requested, process in background
 	if (analyzeWithAI) {

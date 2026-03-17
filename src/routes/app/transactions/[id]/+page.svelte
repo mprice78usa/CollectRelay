@@ -648,6 +648,14 @@
 					Download All
 				</a>
 			{/if}
+			{#if data.voiceNotes?.length > 0 || data.photoNotes?.length > 0 || data.siteAudits?.length > 0}
+				<a href="/api/daily-log/{data.transaction.id}" class="btn-outline-sm" target="_blank">
+					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+					</svg>
+					Daily Log
+				</a>
+			{/if}
 			{#if txn.status === 'draft'}
 				<form method="POST" action="?/sendLink" use:enhance={() => { return async ({ result, update }) => { if (result.type === 'success' && result.data?.magicLink) { magicLink = result.data.magicLink; } await update(); }; }}>
 					<button type="submit" class="btn-primary-sm">Send to Client</button>
@@ -1325,6 +1333,35 @@
 		<button type="submit" class="btn-accept">Invite Partner</button>
 	</form>
 </div>
+
+<!-- Safety Audits -->
+{#if data.siteAudits && data.siteAudits.length > 0}
+	<div class="audits-section">
+		<h2>Safety Audits</h2>
+		<div class="audits-list">
+			{#each data.siteAudits as audit}
+				<div class="audit-card">
+					<div class="audit-card-header">
+						<span class="audit-severity-badge audit-sev-{audit.overall_severity || 'pass'}">{(audit.overall_severity || 'pass').toUpperCase()}</span>
+						<span class="audit-date">{new Date(audit.created_at + 'Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+					</div>
+					{#if audit.summary}
+						<p class="audit-summary">{audit.summary}</p>
+					{/if}
+					<div class="audit-counts">
+						{#if audit.critical_count > 0}<span class="audit-count-critical">{audit.critical_count} Critical</span>{/if}
+						{#if audit.warning_count > 0}<span class="audit-count-warning">{audit.warning_count} Warning</span>{/if}
+						{#if audit.finding_count - audit.critical_count - audit.warning_count > 0}<span class="audit-count-info">{audit.finding_count - audit.critical_count - audit.warning_count} Info</span>{/if}
+						{#if audit.finding_count === 0}<span class="audit-count-pass">No issues</span>{/if}
+					</div>
+					<div class="audit-card-actions">
+						{#if audit.is_relayed}<span class="audit-relayed-badge">Relayed</span>{/if}
+					</div>
+				</div>
+			{/each}
+		</div>
+	</div>
+{/if}
 
 <!-- Attach from Library Modal -->
 <Modal bind:open={showLibraryModal} title="Attach from Document Library">
@@ -3489,5 +3526,71 @@
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		-webkit-box-orient: vertical;
+	}
+
+	/* Safety Audits */
+	.audits-section {
+		margin-top: var(--space-xl);
+	}
+	.audits-section h2 {
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		margin-bottom: var(--space-md);
+	}
+	.audits-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+	.audit-card {
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+		padding: var(--space-md);
+	}
+	.audit-card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: var(--space-sm);
+	}
+	.audit-severity-badge {
+		font-size: 10px;
+		font-weight: 700;
+		padding: 2px 8px;
+		border-radius: var(--radius-full);
+		text-transform: uppercase;
+	}
+	.audit-sev-critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+	.audit-sev-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+	.audit-sev-pass { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+	.audit-date {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+	.audit-summary {
+		font-size: var(--font-size-sm);
+		color: var(--text-secondary);
+		margin-bottom: var(--space-sm);
+	}
+	.audit-counts {
+		display: flex;
+		gap: var(--space-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+	}
+	.audit-count-critical { color: #ef4444; }
+	.audit-count-warning { color: #f59e0b; }
+	.audit-count-info { color: #3b82f6; }
+	.audit-count-pass { color: #10b981; }
+	.audit-card-actions {
+		margin-top: var(--space-sm);
+	}
+	.audit-relayed-badge {
+		font-size: 10px;
+		padding: 2px 8px;
+		border-radius: var(--radius-full);
+		background: rgba(16, 185, 129, 0.1);
+		color: #10b981;
 	}
 </style>

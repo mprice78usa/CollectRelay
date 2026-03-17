@@ -15,6 +15,13 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	if (!db || !bucket) throw error(503, 'Storage not available');
 	if (!user?.workspaceId) throw error(401, 'Unauthorized');
 
+	// Offline sync dedup
+	const syncId = request.headers.get('X-Sync-Id');
+	if (syncId) {
+		const dup = await db.prepare('SELECT note_id FROM sync_log WHERE id = ? AND note_type = ?').bind(syncId, 'voice').first<{ note_id: string }>();
+		if (dup) return json({ id: dup.note_id, status: 'completed', deduplicated: true });
+	}
+
 	const formData = await request.formData();
 	const audio = formData.get('audio') as File;
 	const transactionId = formData.get('transactionId') as string;
@@ -50,6 +57,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		`INSERT INTO voice_notes (id, transaction_id, created_by, r2_key, duration_seconds, file_size, transcript_status, ai_status)
 		 VALUES (?, ?, ?, ?, ?, ?, 'pending', 'pending')`
 	).bind(noteId, transactionId, user.id, r2Key, duration, audio.size).run();
+
+	// Record sync dedup entry
+	if (syncId) {
+		await db.prepare('INSERT INTO sync_log (id, client_id, note_type, note_id) VALUES (?, ?, ?, ?)')
+			.bind(syncId, syncId.split(':')[0], 'voice', noteId).run();
+	}
 
 	// Process in background (transcribe + extract tasks)
 	platform?.context?.waitUntil(

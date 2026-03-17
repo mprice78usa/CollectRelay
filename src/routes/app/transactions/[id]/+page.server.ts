@@ -138,7 +138,13 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 			{ id: 'ms-3', transaction_id: params.id, milestone_type: 'appraisal', label: 'Appraisal Due', date: '2026-03-22', completed: 0, sort_order: 2, created_at: '2026-03-01' },
 			{ id: 'ms-4', transaction_id: params.id, milestone_type: 'closing', label: 'Closing', date: '2026-05-01', completed: 0, sort_order: 6, created_at: '2026-03-01' }
 		];
-		return { transaction: mockTransaction, files: mockFiles, comments: mockComments, customFields: mockCustomFields, collaborators: [] as any[], itemActivity: [] as any[], lastSeenAt: null as string | null, milestones: mockMilestones, partnerLinks: [] as DbPartnerLink[], libraryDocs: [] as DbDocumentLibraryItem[], voiceNotes: [] as any[], photoNotes: [] as any[] };
+		const mockVoiceNotes = [
+			{ id: 'vn-1', duration_seconds: 45, transcript: 'Checked the framing on the second floor. Everything looks good. Need to schedule the electrical rough-in for next week.', transcript_status: 'completed', ai_actions: JSON.stringify([{ text: 'Schedule electrical rough-in for next week' }]), ai_status: 'completed', is_relayed: 0, created_at: new Date().toISOString() }
+		];
+		const mockPhotoNotes = [
+			{ id: 'pn-1', r2_key: 'mock/photo1.jpg', filename: 'framing-check.jpg', mime_type: 'image/jpeg', title: 'Second Floor Framing', notes: 'All headers properly supported', ai_description: 'Photo shows residential wood framing on second floor. Headers appear properly sized and supported with jack studs.', ai_actions: null, ai_status: 'completed', is_relayed: 0, created_at: new Date().toISOString() }
+		];
+		return { transaction: mockTransaction, files: mockFiles, comments: mockComments, customFields: mockCustomFields, collaborators: [] as any[], itemActivity: [] as any[], lastSeenAt: null as string | null, milestones: mockMilestones, partnerLinks: [] as DbPartnerLink[], libraryDocs: [] as DbDocumentLibraryItem[], voiceNotes: mockVoiceNotes, photoNotes: mockPhotoNotes, siteAudits: [] as any[] };
 	}
 
 	const transaction = await getTransactionById(db, params.id, workspaceId);
@@ -148,7 +154,7 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 
 	// Load data + activity info in parallel
 	const userId = locals.user!.id;
-	const [files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, voiceNotesResult, photoNotesResult] = await Promise.all([
+	const [files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, voiceNotesResult, photoNotesResult, siteAuditsResult] = await Promise.all([
 		getFilesForTransaction(db, params.id),
 		getCommentsForTransaction(db, params.id),
 		getTransactionCustomFields(db, params.id),
@@ -160,10 +166,13 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 		db.prepare('SELECT id, duration_seconds, transcript, transcript_status, ai_actions, ai_status, is_relayed, created_at FROM voice_notes WHERE transaction_id = ? ORDER BY created_at DESC')
 			.bind(params.id).all(),
 		db.prepare('SELECT id, r2_key, filename, mime_type, title, notes, ai_description, ai_actions, ai_status, is_relayed, created_at FROM photo_notes WHERE transaction_id = ? ORDER BY created_at DESC')
-			.bind(params.id).all()
+			.bind(params.id).all(),
+		db.prepare('SELECT id, photo_note_id, summary, overall_severity, finding_count, critical_count, warning_count, ai_status, is_relayed, created_at FROM site_audits WHERE transaction_id = ? AND workspace_id = ? ORDER BY created_at DESC')
+			.bind(params.id, workspaceId).all()
 	]);
 	const voiceNotes = voiceNotesResult.results || [];
 	const photoNotes = photoNotesResult.results || [];
+	const siteAudits = siteAuditsResult.results || [];
 
 	// Mark as seen (non-blocking)
 	markTransactionSeen(db, params.id, 'pro', userId).catch(() => {});
@@ -177,7 +186,7 @@ export const load: PageServerLoad = async ({ params, locals, platform }) => {
 	const allLibraryDocs = await getDocumentLibrary(db, workspaceId, undefined, industry);
 	const libraryDocs = allLibraryDocs.filter(d => d.r2_key && d.filename);
 
-	return { transaction, files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, libraryDocs, voiceNotes, photoNotes };
+	return { transaction, files, comments, customFields, collaborators, itemActivity, lastSeenAt, milestones, partnerLinks, libraryDocs, voiceNotes, photoNotes, siteAudits };
 };
 
 export const actions: Actions = {

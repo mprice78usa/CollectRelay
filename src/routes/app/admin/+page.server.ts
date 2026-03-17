@@ -212,6 +212,7 @@ export const actions: Actions = {
 			db.prepare('DELETE FROM comments WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM audit_events WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM voice_notes WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
+			db.prepare('DELETE FROM site_audits WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM photo_notes WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM checklist_items WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),
 			db.prepare('DELETE FROM client_sessions WHERE transaction_id IN (SELECT id FROM transactions WHERE workspace_id = ?)').bind(workspaceId),

@@ -100,45 +100,87 @@
 
 		<!-- Core Pro Features -->
 		<section class="features-section">
-			<h2 class="section-title">Core Pro Features</h2>
-			<p class="section-sub">AI-powered tools designed for the way contractors actually work.</p>
+			<h2 class="section-title">The Pro Toolkit</h2>
+			<p class="section-sub">Five AI-powered capabilities designed for the way contractors actually work.</p>
 
-			<div class="features-grid grid-2">
+			<div class="features-grid">
 				<div class="feature-card ai-card">
 					<div class="feature-icon accent">
 						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
 							<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
 						</svg>
 					</div>
-					<h3>Voice-to-Task Engine</h3>
-					<p>Speak naturally while walking the job site. AI transcribes your words and extracts tasks with priorities, trade assignments, and deadlines — ready to relay to your project in one tap.</p>
+					<h3>AI Field Intelligence</h3>
+					<p>Speak naturally while walking the job. AI transcribes your words and extracts tasks with priorities and trade assignments — ready to relay to your project in one tap.</p>
 				</div>
 				<div class="feature-card ai-card">
 					<div class="feature-icon accent">
 						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/>
+							<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
 						</svg>
 					</div>
-					<h3>Photo Site Audits</h3>
-					<p>Snap photos of site conditions, safety concerns, or quality issues. AI vision analyzes what it sees, describes findings, and suggests corrective actions. Bundle photos into a professional PDF Site Observation Report.</p>
+					<h3>AI Safety Scout</h3>
+					<p>An extra pair of eyes on every photo. CollectRelay Pro flags potential OSHA violations and safety hazards before they become incidents — from missing hard hats to unsecured ladders.</p>
 				</div>
 				<div class="feature-card ai-card">
 					<div class="feature-icon accent">
 						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M12 5v14"/><path d="M5 12h14"/><rect x="3" y="3" width="18" height="18" rx="2"/>
+							<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/>
 						</svg>
 					</div>
-					<h3>Quick Add Dashboard</h3>
-					<p>Capture voice, text, or photos right from your dashboard and assign them to any project. One input point for everything — no switching between apps, screens, or tools.</p>
+					<h3>One-Click Daily Logs</h3>
+					<p>Stop spending 45 minutes every evening typing up what happened on-site. One tap compiles all your photos and voice notes into a branded PDF Daily Report — ready to send while you drive home.</p>
 				</div>
 				<div class="feature-card ai-card">
 					<div class="feature-icon accent">
 						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-							<path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+							<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/>
 						</svg>
 					</div>
-					<h3>No-Account Client Portal</h3>
-					<p>Subs and clients click a magic link and see exactly what you need from them. No passwords, no sign-ups — just a clean upload portal with clear instructions.</p>
+					<h3>Smart Trade Routing</h3>
+					<p>When AI identifies a plumbing issue from your voice note, it doesn't just add it to a list — it prepares the message and photo snippet to relay directly to your plumber. Don't just track issues. Relay them.</p>
+				</div>
+				<div class="feature-card ai-card">
+					<div class="feature-icon accent">
+						<svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+							<line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0119 12.55"/><path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M10.71 5.05A16 16 0 0122.56 9"/><path d="M1.42 9a15.91 15.91 0 014.7-2.88"/><path d="M8.53 16.11a6 6 0 016.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+						</svg>
+					</div>
+					<h3>Resilient Field Sync</h3>
+					<p>Built for the basement. Record your notes and snap photos anywhere — even with zero signal. CollectRelay queues everything locally and auto-syncs the second you're back in range.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Pro Package Summary -->
+		<section class="pro-summary-strip">
+			<div class="summary-items">
+				<div class="summary-item">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/>
+					</svg>
+					<span>AI Field Intelligence</span>
+				</div>
+				<div class="summary-divider"></div>
+				<div class="summary-item">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+					</svg>
+					<span>Auto-Generated PDF Reports</span>
+				</div>
+				<div class="summary-divider"></div>
+				<div class="summary-item">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 009 9"/>
+					</svg>
+					<span>Custom Trade Routing</span>
+				</div>
+				<div class="summary-divider"></div>
+				<div class="summary-item">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M5 12.55a10.94 10.94 0 015.17-2.39"/><path d="M12 20l.01 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/>
+					</svg>
+					<span>Resilient Offline Sync</span>
 				</div>
 			</div>
 		</section>
@@ -425,8 +467,42 @@
 		gap: var(--space-xl);
 	}
 
-	.features-grid.grid-2 {
-		grid-template-columns: repeat(2, 1fr);
+	/* Pro Summary Strip */
+	.pro-summary-strip {
+		margin-bottom: var(--space-5xl);
+		padding: var(--space-xl) var(--space-xxl);
+		background: linear-gradient(135deg, rgba(74, 122, 245, 0.06) 0%, rgba(16, 185, 129, 0.06) 100%);
+		border-top: 1px solid rgba(74, 122, 245, 0.15);
+		border-bottom: 1px solid rgba(74, 122, 245, 0.15);
+		border-radius: var(--radius-lg);
+	}
+
+	.summary-items {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-xl);
+		flex-wrap: wrap;
+	}
+
+	.summary-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+	}
+
+	.summary-item svg {
+		color: var(--color-accent);
+		flex-shrink: 0;
+	}
+
+	.summary-divider {
+		width: 1px;
+		height: 20px;
+		background: var(--border-color);
 	}
 
 	.feature-card {
@@ -542,9 +618,11 @@
 	}
 
 	@media (max-width: 768px) {
-		.features-grid, .features-grid.grid-2, .steps-grid { grid-template-columns: 1fr; }
+		.features-grid, .steps-grid { grid-template-columns: 1fr; }
 		.comparison-card { flex-direction: column; text-align: center; }
 		.comparison-arrow { transform: rotate(90deg); }
 		.cta-actions, .hero-actions { flex-direction: column; align-items: center; }
+		.summary-items { flex-direction: column; gap: var(--space-md); }
+		.summary-divider { display: none; }
 	}
 </style>

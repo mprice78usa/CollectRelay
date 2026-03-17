@@ -1,10 +1,24 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import { getTerms } from '$lib/terminology';
+	import OfflineBanner from '$lib/components/ui/OfflineBanner.svelte';
+	import { initOnlineListeners } from '$lib/offline/status.svelte';
+	import { setupOnlineListener, registerBackgroundSync } from '$lib/offline/sync';
 
 	let { data, children } = $props();
 
 	let terms = $derived(getTerms(data.industry));
+
+	onMount(() => {
+		const cleanupOnline = initOnlineListeners();
+		const cleanupSync = setupOnlineListener();
+		registerBackgroundSync();
+		return () => {
+			cleanupOnline?.();
+			cleanupSync();
+		};
+	});
 
 	let navItems = $derived([
 		{ href: '/app', label: 'Dashboard', exact: true, icon: 'dashboard' },
@@ -107,6 +121,7 @@
 	</aside>
 
 	<main class="content">
+		<OfflineBanner />
 		{#if billing?.isTrialActive}
 			<div class="trial-banner">
 				<span>You have <strong>{billing.trialDaysLeft} day{billing.trialDaysLeft === 1 ? '' : 's'}</strong> left in your free trial.</span>

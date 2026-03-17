@@ -2,6 +2,11 @@
 	import Card from '$components/ui/Card.svelte';
 	import Badge from '$components/ui/Badge.svelte';
 	import { getTerms } from '$lib/terminology';
+	import { addToSyncQueue } from '$lib/offline/db';
+	import { getOfflineState } from '$lib/offline/status.svelte';
+	import { refreshPendingCount, registerBackgroundSync } from '$lib/offline/sync';
+
+	const offlineState = getOfflineState();
 
 	let { data } = $props();
 
@@ -127,11 +132,16 @@
 	let qaPhotoTitle = $state('');
 	let qaPhotoNotes = $state('');
 	let qaPhotoAnalyze = $state(false);
+	let qaPhotoAudit = $state(false);
 	let qaPhotoNoteId = $state<string | null>(null);
 	let qaPhotoResult = $state<{ ai_description: string; actions: any } | null>(null);
+	let qaAuditResult = $state<{ summary: string; overallSeverity: string; findings: any[]; findingCount: number; criticalCount: number; warningCount: number } | null>(null);
+	let qaAuditId = $state<string | null>(null);
 	let qaPhotoError = $state<string | null>(null);
 	let qaPhotoUploading = $state(false);
 	let qaPhotoPollingTimer: ReturnType<typeof setInterval> | null = null;
+	let qaAuditPollingTimer: ReturnType<typeof setInterval> | null = null;
+	let qaSelectedFindings = $state<Set<number>>(new Set());
 
 	// Shared
 	let selectedTransactionId = $state('');
@@ -164,11 +174,16 @@
 		qaPhotoTitle = '';
 		qaPhotoNotes = '';
 		qaPhotoAnalyze = false;
+		qaPhotoAudit = false;
 		qaPhotoNoteId = null;
 		qaPhotoResult = null;
+		qaAuditResult = null;
+		qaAuditId = null;
 		qaPhotoError = null;
 		qaPhotoUploading = false;
+		qaSelectedFindings = new Set();
 		if (qaPhotoPollingTimer) { clearInterval(qaPhotoPollingTimer); qaPhotoPollingTimer = null; }
+		if (qaAuditPollingTimer) { clearInterval(qaAuditPollingTimer); qaAuditPollingTimer = null; }
 		selectedTransactionId = '';
 		qaSuccessMessage = '';
 		if (qaRecordingTimer) { clearInterval(qaRecordingTimer); qaRecordingTimer = null; }
@@ -219,6 +234,37 @@
 
 	async function qaUploadAndProcess() {
 		if (!qaAudioBlob || !selectedTransactionId) return;
+
+		// Offline: queue for later sync
+		if (!offlineState.isOnline) {
+			try {
+				const fileData = await qaAudioBlob.arrayBuffer();
+				await addToSyncQueue({
+					type: 'voice',
+					transactionId: selectedTransactionId,
+					payload: {
+						transactionId: selectedTransactionId,
+						duration: qaRecordingDuration
+					},
+					fileData,
+					fileName: 'recording.webm',
+					mimeType: 'audio/webm',
+					createdAt: Date.now(),
+					retryCount: 0,
+					status: 'pending'
+				});
+				await refreshPendingCount();
+				registerBackgroundSync();
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `Voice note queued for ${txnName} — will sync when online`;
+				quickAddStep = 'success';
+			} catch (err: any) {
+				qaVoiceError = err.message || 'Failed to queue offline';
+				quickAddStep = 'error';
+			}
+			return;
+		}
+
 		quickAddStep = 'processing';
 
 		try {
@@ -324,17 +370,41 @@
 		if (!textTitle.trim()) return;
 		textSaving = true;
 
-		try {
-			const body: any = {
-				destination: textDestination,
-				title: textTitle.trim(),
-				content: textContent.trim()
-			};
-			if (textDestination === 'project') {
-				if (!selectedTransactionId) { textSaving = false; return; }
-				body.transactionId = selectedTransactionId;
-			}
+		const body: any = {
+			destination: textDestination,
+			title: textTitle.trim(),
+			content: textContent.trim()
+		};
+		if (textDestination === 'project') {
+			if (!selectedTransactionId) { textSaving = false; return; }
+			body.transactionId = selectedTransactionId;
+		}
 
+		// Offline: queue for later sync (project notes only)
+		if (!offlineState.isOnline && textDestination === 'project') {
+			try {
+				await addToSyncQueue({
+					type: 'text',
+					transactionId: selectedTransactionId,
+					payload: body,
+					createdAt: Date.now(),
+					retryCount: 0,
+					status: 'pending'
+				});
+				await refreshPendingCount();
+				registerBackgroundSync();
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `Note queued for ${txnName} — will sync when online`;
+				quickAddStep = 'success';
+			} catch {
+				qaVoiceError = 'Failed to queue offline';
+				quickAddStep = 'error';
+			}
+			textSaving = false;
+			return;
+		}
+
+		try {
 			const res = await fetch('/api/text-note', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -382,6 +452,39 @@
 		if (!qaPhotoFile || !selectedTransactionId) return;
 		qaPhotoUploading = true;
 		qaPhotoError = null;
+
+		// Offline: queue for later sync
+		if (!offlineState.isOnline) {
+			try {
+				const fileData = await qaPhotoFile.arrayBuffer();
+				await addToSyncQueue({
+					type: 'photo',
+					transactionId: selectedTransactionId,
+					payload: {
+						transactionId: selectedTransactionId,
+						title: qaPhotoTitle.trim() || null,
+						notes: qaPhotoNotes.trim() || null,
+						analyzeWithAI: qaPhotoAnalyze
+					},
+					fileData,
+					fileName: qaPhotoFile.name,
+					mimeType: qaPhotoFile.type,
+					createdAt: Date.now(),
+					retryCount: 0,
+					status: 'pending'
+				});
+				await refreshPendingCount();
+				registerBackgroundSync();
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `Photo queued for ${txnName} — will sync when online`;
+				quickAddStep = 'success';
+			} catch (err: any) {
+				qaPhotoError = err.message || 'Failed to queue offline';
+				quickAddStep = 'error';
+			}
+			qaPhotoUploading = false;
+			return;
+		}
 
 		try {
 			const formData = new FormData();
@@ -476,6 +579,137 @@
 			quickAddStep = 'error';
 		}
 		qaRelayLoading = false;
+	}
+
+	async function qaUploadPhotoForAudit() {
+		if (!qaPhotoFile || !selectedTransactionId) return;
+		qaPhotoUploading = true;
+		qaPhotoError = null;
+
+		try {
+			// Step 1: Upload the photo (without AI analysis)
+			const formData = new FormData();
+			formData.append('photo', qaPhotoFile);
+			formData.append('transactionId', selectedTransactionId);
+			if (qaPhotoTitle.trim()) formData.append('title', qaPhotoTitle.trim());
+			if (qaPhotoNotes.trim()) formData.append('notes', qaPhotoNotes.trim());
+			formData.append('analyzeWithAI', 'false');
+
+			const uploadRes = await fetch('/api/photo-note', { method: 'POST', body: formData });
+			if (!uploadRes.ok) {
+				const err = await uploadRes.json().catch(() => ({ message: 'Upload failed' }));
+				throw new Error(err.message || 'Upload failed');
+			}
+			const uploadResult = await uploadRes.json();
+			qaPhotoNoteId = uploadResult.id;
+
+			// Step 2: Start safety audit
+			const auditRes = await fetch('/api/site-audit', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ photoNoteId: uploadResult.id, transactionId: selectedTransactionId })
+			});
+			if (!auditRes.ok) {
+				const err = await auditRes.json().catch(() => ({ message: 'Audit failed' }));
+				throw new Error(err.message || 'Failed to start audit');
+			}
+			const auditResult = await auditRes.json();
+			qaAuditId = auditResult.id;
+			quickAddStep = 'processing';
+			qaStartAuditPolling();
+		} catch (err: any) {
+			qaPhotoError = err.message || 'Upload failed';
+			quickAddStep = 'error';
+		}
+		qaPhotoUploading = false;
+	}
+
+	function qaStartAuditPolling() {
+		let elapsed = 0;
+		qaAuditPollingTimer = setInterval(async () => {
+			elapsed += 2;
+			if (elapsed > 90 || !qaAuditId) {
+				if (qaAuditPollingTimer) clearInterval(qaAuditPollingTimer);
+				qaPhotoError = 'Audit processing timed out.';
+				quickAddStep = 'error';
+				return;
+			}
+			try {
+				const res = await fetch(`/api/site-audit/${qaAuditId}`);
+				if (!res.ok) return;
+				const d = await res.json();
+				if (d.status === 'completed') {
+					if (qaAuditPollingTimer) clearInterval(qaAuditPollingTimer);
+					qaAuditResult = {
+						summary: d.summary,
+						overallSeverity: d.overallSeverity,
+						findings: d.findings || [],
+						findingCount: d.findingCount,
+						criticalCount: d.criticalCount,
+						warningCount: d.warningCount
+					};
+					qaSelectedFindings = new Set(qaAuditResult.findings.map((_: any, i: number) => i));
+					quickAddStep = 'review';
+				} else if (d.status === 'failed') {
+					if (qaAuditPollingTimer) clearInterval(qaAuditPollingTimer);
+					qaPhotoError = 'Safety audit failed.';
+					quickAddStep = 'error';
+				}
+			} catch { /* keep polling */ }
+		}, 2000);
+	}
+
+	async function qaRelayAuditFindings() {
+		if (!qaAuditId || !qaAuditResult) return;
+		qaRelayLoading = true;
+
+		const findings = qaAuditResult.findings
+			.filter((_: any, i: number) => qaSelectedFindings.has(i));
+
+		if (findings.length === 0) {
+			qaRelayLoading = false;
+			return;
+		}
+
+		try {
+			const res = await fetch(`/api/site-audit/${qaAuditId}/relay`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ findings })
+			});
+			if (res.ok) {
+				const txnName = data.assignableTransactions?.find((t: any) => t.id === selectedTransactionId)?.title || 'project';
+				qaSuccessMessage = `${findings.length} finding${findings.length === 1 ? '' : 's'} relayed to ${txnName}`;
+				quickAddStep = 'success';
+			} else {
+				qaPhotoError = 'Failed to relay findings';
+				quickAddStep = 'error';
+			}
+		} catch {
+			qaPhotoError = 'Failed to relay findings';
+			quickAddStep = 'error';
+		}
+		qaRelayLoading = false;
+	}
+
+	async function qaDownloadAuditReport() {
+		if (!qaAuditId) return;
+		try {
+			const res = await fetch('/api/site-audit/report', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ auditId: qaAuditId })
+			});
+			if (res.ok) {
+				const blob = await res.blob();
+				const url = URL.createObjectURL(blob);
+				const a = document.createElement('a');
+				a.href = url;
+				a.download = `Safety-Audit-${qaAuditId.slice(0, 8)}.pdf`;
+				a.click();
+				URL.revokeObjectURL(url);
+			}
+		} catch { /* non-critical */ }
 	}
 
 	function formatDuration(seconds: number): string {
@@ -691,7 +925,7 @@
 	</div>
 
 	<!-- Mortgage Rates Ticker -->
-	{#if data.mortgageRates}
+	{#if data.mortgageRates && data.industry === 'real_estate'}
 		<div class="rates-ticker">
 			<div class="rates-header">
 				<div class="rates-title-row">
@@ -992,11 +1226,20 @@
 								</div>
 								<div class="qa-field">
 									<label class="qa-toggle-row">
-										<input type="checkbox" bind:checked={qaPhotoAnalyze} />
+										<input type="checkbox" bind:checked={qaPhotoAnalyze} onchange={() => { if (qaPhotoAnalyze) qaPhotoAudit = false; }} />
 										<span>Analyze with AI</span>
 									</label>
 									{#if qaPhotoAnalyze}
 										<p class="qa-hint" style="margin-top: 4px">AI will describe what it sees and suggest tasks</p>
+									{/if}
+								</div>
+								<div class="qa-field">
+									<label class="qa-toggle-row">
+										<input type="checkbox" bind:checked={qaPhotoAudit} onchange={() => { if (qaPhotoAudit) qaPhotoAnalyze = false; }} />
+										<span>Safety Audit</span>
+									</label>
+									{#if qaPhotoAudit}
+										<p class="qa-hint" style="margin-top: 4px">AI inspects for OSHA violations, PPE, fall protection, and other safety hazards</p>
 									{/if}
 								</div>
 								<div class="qa-field">
@@ -1010,8 +1253,8 @@
 								</div>
 								<div class="qa-actions">
 									<button class="qa-btn-secondary" onclick={qaRemovePhoto}>Back</button>
-									<button class="qa-btn-primary" onclick={qaUploadPhoto} disabled={qaPhotoUploading || !selectedTransactionId}>
-										{qaPhotoUploading ? 'Uploading...' : qaPhotoAnalyze ? 'Upload & Analyze' : 'Upload Photo'}
+									<button class="qa-btn-primary" onclick={qaPhotoAudit ? qaUploadPhotoForAudit : qaUploadPhoto} disabled={qaPhotoUploading || !selectedTransactionId}>
+										{qaPhotoUploading ? 'Uploading...' : qaPhotoAudit ? 'Upload & Audit' : qaPhotoAnalyze ? 'Upload & Analyze' : 'Upload Photo'}
 									</button>
 								</div>
 							{/if}
@@ -1023,8 +1266,59 @@
 									<div class="qa-wave-bar" style="animation-delay: {i * 0.05}s"></div>
 								{/each}
 							</div>
-							<p class="qa-processing-label">Analyzing your photo...</p>
-							<p class="qa-hint">AI is describing what it sees and extracting tasks</p>
+							<p class="qa-processing-label">{qaPhotoAudit ? 'Running safety audit...' : 'Analyzing your photo...'}</p>
+							<p class="qa-hint">{qaPhotoAudit ? 'AI is inspecting for safety hazards and compliance issues' : 'AI is describing what it sees and extracting tasks'}</p>
+						</div>
+					{:else if quickAddStep === 'review' && qaAuditResult}
+						<div class="qa-body">
+							<div class="qa-audit-header">
+								<span class="qa-audit-severity qa-severity-{qaAuditResult.overallSeverity}">{qaAuditResult.overallSeverity.toUpperCase()}</span>
+								<span class="qa-audit-counts">
+									{#if qaAuditResult.criticalCount > 0}<span class="qa-count-critical">{qaAuditResult.criticalCount} Critical</span>{/if}
+									{#if qaAuditResult.warningCount > 0}<span class="qa-count-warning">{qaAuditResult.warningCount} Warning</span>{/if}
+									{#if qaAuditResult.findingCount - qaAuditResult.criticalCount - qaAuditResult.warningCount > 0}<span class="qa-count-info">{qaAuditResult.findingCount - qaAuditResult.criticalCount - qaAuditResult.warningCount} Info</span>{/if}
+								</span>
+							</div>
+							{#if qaAuditResult.summary}
+								<div class="qa-transcript">
+									<p>{qaAuditResult.summary}</p>
+								</div>
+							{/if}
+							{#if qaAuditResult.findings.length > 0}
+								<div class="qa-field">
+									<label class="qa-label">Findings</label>
+									{#each qaAuditResult.findings as finding, i}
+										<div class="qa-finding-row qa-finding-{finding.severity}">
+											<div class="qa-finding-header">
+												<input type="checkbox" checked={qaSelectedFindings.has(i)} onchange={() => {
+													const next = new Set(qaSelectedFindings);
+													if (next.has(i)) next.delete(i); else next.add(i);
+													qaSelectedFindings = next;
+												}} />
+												<span class="qa-finding-code">{finding.code}</span>
+												<span class="qa-finding-severity-badge qa-severity-{finding.severity}">{finding.severity}</span>
+												<span class="qa-finding-category">{finding.category}</span>
+											</div>
+											<p class="qa-finding-desc">{finding.description}</p>
+											<p class="qa-finding-rec">{finding.recommendation}</p>
+											{#if finding.osha_reference}
+												<p class="qa-finding-osha">Ref: {finding.osha_reference}</p>
+											{/if}
+										</div>
+									{/each}
+								</div>
+							{:else}
+								<p class="qa-hint">No safety issues found — site appears compliant.</p>
+							{/if}
+							<div class="qa-actions">
+								<button class="qa-btn-secondary" onclick={qaDownloadAuditReport}>Download PDF</button>
+								<button class="qa-btn-secondary" onclick={() => { quickAddStep = 'input'; resetQuickAdd(); }}>Discard</button>
+								{#if qaAuditResult.findings.length > 0}
+									<button class="qa-btn-primary" onclick={qaRelayAuditFindings} disabled={qaRelayLoading || qaSelectedFindings.size === 0}>
+										{qaRelayLoading ? 'Relaying...' : `Relay ${qaSelectedFindings.size} Finding${qaSelectedFindings.size === 1 ? '' : 's'}`}
+									</button>
+								{/if}
+							</div>
 						</div>
 					{:else if quickAddStep === 'review' && qaPhotoResult}
 						<div class="qa-body">
@@ -1994,5 +2288,87 @@
 		width: 16px;
 		height: 16px;
 		accent-color: var(--color-accent);
+	}
+
+	/* Audit review styles */
+	.qa-audit-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		margin-bottom: var(--space-md);
+	}
+	.qa-audit-severity {
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		padding: 3px 12px;
+		border-radius: var(--radius-full);
+		text-transform: uppercase;
+	}
+	.qa-severity-critical { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+	.qa-severity-warning { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+	.qa-severity-pass { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+	.qa-severity-info { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+	.qa-audit-counts {
+		display: flex;
+		gap: var(--space-sm);
+		font-size: var(--font-size-xs);
+		font-weight: 600;
+	}
+	.qa-count-critical { color: #ef4444; }
+	.qa-count-warning { color: #f59e0b; }
+	.qa-count-info { color: #3b82f6; }
+	.qa-finding-row {
+		padding: var(--space-sm) var(--space-md);
+		border-radius: var(--radius-md);
+		margin-bottom: var(--space-sm);
+		border-left: 3px solid transparent;
+	}
+	.qa-finding-critical { background: rgba(239, 68, 68, 0.06); border-left-color: #ef4444; }
+	.qa-finding-warning { background: rgba(245, 158, 11, 0.06); border-left-color: #f59e0b; }
+	.qa-finding-info { background: rgba(59, 130, 246, 0.06); border-left-color: #3b82f6; }
+	.qa-finding-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: 4px;
+	}
+	.qa-finding-header input[type="checkbox"] {
+		width: 14px;
+		height: 14px;
+		accent-color: var(--color-accent);
+	}
+	.qa-finding-code {
+		font-size: var(--font-size-xs);
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+	.qa-finding-severity-badge {
+		font-size: 10px;
+		font-weight: 600;
+		padding: 1px 6px;
+		border-radius: var(--radius-full);
+		text-transform: uppercase;
+	}
+	.qa-finding-category {
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+	}
+	.qa-finding-desc {
+		font-size: var(--font-size-sm);
+		color: var(--text-primary);
+		margin-bottom: 4px;
+		padding-left: 22px;
+	}
+	.qa-finding-rec {
+		font-size: var(--font-size-xs);
+		color: var(--text-secondary);
+		font-style: italic;
+		padding-left: 22px;
+	}
+	.qa-finding-osha {
+		font-size: 10px;
+		color: var(--color-accent);
+		padding-left: 22px;
+		margin-top: 2px;
 	}
 </style>

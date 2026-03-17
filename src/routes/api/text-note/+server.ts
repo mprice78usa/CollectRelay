@@ -9,6 +9,13 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 	if (!db || !user?.workspaceId) throw error(401, 'Unauthorized');
 
+	// Offline sync dedup
+	const syncId = request.headers.get('X-Sync-Id');
+	if (syncId) {
+		const dup = await db.prepare('SELECT note_id FROM sync_log WHERE id = ? AND note_type = ?').bind(syncId, 'text').first<{ note_id: string }>();
+		if (dup) return json({ success: true, id: dup.note_id, deduplicated: true });
+	}
+
 	const body = await request.json() as {
 		destination: 'project' | 'library';
 		transactionId?: string;
@@ -39,6 +46,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			 VALUES (?, ?, ?, ?, 'document', 0, ?, 'pending')`
 		).bind(itemId, body.transactionId, body.title.trim(), body.content?.trim() || null, (maxSort?.max_sort || 0) + 1).run();
 
+		// Record sync dedup entry
+		if (syncId) {
+			await db.prepare('INSERT INTO sync_log (id, client_id, note_type, note_id) VALUES (?, ?, ?, ?)')
+				.bind(syncId, syncId.split(':')[0], 'text', itemId).run();
+		}
+
 		return json({ success: true, id: itemId, destination: 'project' });
 	}
 
@@ -48,6 +61,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 			`INSERT INTO document_library (id, workspace_id, category, name, description, is_system, created_by)
 			 VALUES (?, ?, 'custom', ?, ?, 0, ?)`
 		).bind(docId, user.workspaceId, body.title.trim(), body.content?.trim() || null, user.id).run();
+
+		// Record sync dedup entry
+		if (syncId) {
+			await db.prepare('INSERT INTO sync_log (id, client_id, note_type, note_id) VALUES (?, ?, ?, ?)')
+				.bind(syncId, syncId.split(':')[0], 'text', docId).run();
+		}
 
 		return json({ success: true, id: docId, destination: 'library' });
 	}

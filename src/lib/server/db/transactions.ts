@@ -506,6 +506,7 @@ export async function deleteTransaction(
 		db.prepare('DELETE FROM files WHERE transaction_id = ?').bind(transactionId),
 		db.prepare('DELETE FROM item_activity WHERE transaction_id = ?').bind(transactionId),
 		db.prepare('DELETE FROM activity_seen WHERE transaction_id = ?').bind(transactionId),
+		db.prepare('DELETE FROM site_audits WHERE transaction_id = ?').bind(transactionId),
 		db.prepare('DELETE FROM photo_notes WHERE transaction_id = ?').bind(transactionId),
 		db.prepare('DELETE FROM checklist_items WHERE transaction_id = ?').bind(transactionId),
 		db.prepare('DELETE FROM transactions WHERE id = ? AND workspace_id = ?').bind(transactionId, workspaceId)
