@@ -92,6 +92,11 @@
 
 			<a href="/security" onclick={() => mobileOpen = false}>Security</a>
 			<a href="/pricing" onclick={() => mobileOpen = false}>Pricing</a>
+
+			<div class="mobile-auth">
+				<a href="/login" class="mobile-login" onclick={() => mobileOpen = false}>Log in</a>
+				<a href="/register" class="mobile-cta" onclick={() => mobileOpen = false}>Get started free</a>
+			</div>
 		</div>
 
 		<div class="nav-actions">
@@ -277,6 +282,10 @@
 		padding: var(--space-xs);
 	}
 
+	.mobile-auth {
+		display: none;
+	}
+
 	@media (max-width: 768px) {
 		.nav-links {
 			display: none;
@@ -316,6 +325,43 @@
 
 		.mobile-toggle {
 			display: block;
+		}
+
+		.mobile-auth {
+			display: flex;
+			flex-direction: column;
+			gap: var(--space-md);
+			padding-top: var(--space-lg);
+			border-top: 1px solid var(--border-color);
+			margin-top: var(--space-sm);
+		}
+
+		.mobile-login {
+			color: var(--text-secondary);
+			font-size: var(--font-size-md);
+			text-align: center;
+			padding: var(--space-sm) 0;
+		}
+
+		.mobile-login:hover {
+			color: var(--text-primary);
+		}
+
+		.mobile-cta {
+			display: block;
+			text-align: center;
+			padding: var(--space-md) var(--space-lg);
+			background-color: var(--color-accent);
+			color: var(--text-inverse);
+			font-size: var(--font-size-md);
+			font-weight: 600;
+			border-radius: var(--radius-md);
+			transition: background-color var(--transition-fast);
+		}
+
+		.mobile-cta:hover {
+			background-color: var(--color-accent-hover);
+			color: var(--text-inverse);
 		}
 	}
 </style>
