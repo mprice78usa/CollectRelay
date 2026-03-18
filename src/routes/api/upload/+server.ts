@@ -22,10 +22,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	}
 
 	// Dev mode: create a mock bucket if R2 isn't available
-	const devBucket = !bucket ? {
-		async put(_key: string, _body: any, _opts?: any) { return {}; }
-	} as any : null;
-	const storage = bucket || devBucket;
+	const storage = bucket || { async put() { return {}; } } as any;
 
 	// Auth: either Pro user or client session
 	const isClient = !!locals.clientSession;

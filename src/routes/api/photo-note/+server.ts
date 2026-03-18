@@ -97,9 +97,9 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	// Also create a file record linked to the checklist item
 	const fileId = generateId();
 	await db.prepare(
-		`INSERT INTO files (id, checklist_item_id, transaction_id, uploaded_by, original_name, r2_key, mime_type, file_size, status)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'uploaded')`
-	).bind(fileId, itemId, transactionId, user.id, filename, r2Key, photo.type, photo.size).run();
+		`INSERT INTO files (id, checklist_item_id, transaction_id, uploaded_by_client, filename, r2_key, mime_type, file_size)
+		 VALUES (?, ?, ?, 0, ?, ?, ?, ?)`
+	).bind(fileId, itemId, transactionId, filename, r2Key, photo.type, photo.size).run();
 
 	return json({ id: noteId, status: 'completed', itemId });
 };
