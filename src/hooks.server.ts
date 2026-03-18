@@ -31,13 +31,44 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const token = path.slice(CLIENT_PATH_PREFIX.length).split('/')[0];
 
 		if (dev) {
-			// Dev mode: mock client session
+			// Dev mode: support shortcut tokens for specific projects
+			const demoTokenMap: Record<string, string> = {
+				'meridian': 'txn-con-1',    // Commercial closeout — 6/8 complete, mixed statuses
+				'henderson': 'txn-con-2',   // Kitchen remodel draw request — 4/5 complete, in review
+				'willowbrook': 'txn-con-3', // Custom home submittals — 2/7 complete, has rejected item
+				'patel': 'txn-con-4',       // Medical suite — completed project
+				'lincoln': 'txn-con-5',     // School renovation permits — 1/6 complete, early stage
+				'rivera': 'txn-con-6',      // Condo punch list — completed
+				'oakridge': 'txn-con-7',    // Roof replacement — draft, 0/5
+				'baxter': 'txn-con-8',      // Pool house — 2 e-signatures needed
+			};
+
+			const db = event.platform?.env?.DB;
+			const txnId = demoTokenMap[token] || null;
+
+			if (db) {
+				// If token matches a shortcut, load that specific project
+				const targetId = txnId || 'txn-con-1';
+				const demo = await db.prepare('SELECT id, client_email, client_name FROM transactions WHERE id = ?').bind(targetId).first();
+				if (demo) {
+					event.locals.clientSession = {
+						transactionId: demo.id as string,
+						clientEmail: demo.client_email as string,
+						clientName: demo.client_name as string,
+						token
+					};
+					event.cookies.set('client_token', token, { path: '/', httpOnly: true, secure: false, sameSite: 'lax', maxAge: 72 * 60 * 60 });
+					return addSecurityHeaders(await resolve(event), path);
+				}
+			}
+			// Fallback mock
 			event.locals.clientSession = {
-				transactionId: 'mock-txn-1',
-				clientEmail: 'sarah@example.com',
-				clientName: 'Sarah Johnson',
+				transactionId: txnId || 'txn-con-1',
+				clientEmail: 'docs@meridiandevelopment.com',
+				clientName: 'Meridian Development LLC',
 				token
 			};
+			event.cookies.set('client_token', token, { path: '/', httpOnly: true, secure: false, sameSite: 'lax', maxAge: 72 * 60 * 60 });
 			return addSecurityHeaders(await resolve(event), path);
 		}
 
@@ -173,7 +204,27 @@ export const handle: Handle = async ({ event, resolve }) => {
 		// Check for client session (from magic link cookie) — enables client uploads & notifications
 		// Always check even if pro session exists, so both can coexist (pro auth + client context)
 		const clientToken = event.cookies.get('client_token');
-		if (clientToken && event.platform?.env?.MAGIC_LINKS) {
+		if (dev && clientToken) {
+			// Dev mode: resolve token via demo map or DB lookup (same as /c/ path)
+			const demoMap: Record<string, string> = {
+				'meridian': 'txn-con-1', 'henderson': 'txn-con-2', 'willowbrook': 'txn-con-3',
+				'patel': 'txn-con-4', 'lincoln': 'txn-con-5', 'rivera': 'txn-con-6',
+				'oakridge': 'txn-con-7', 'baxter': 'txn-con-8'
+			};
+			const txnId = demoMap[clientToken] || 'txn-con-1';
+			const db = event.platform?.env?.DB;
+			if (db) {
+				const row = await db.prepare('SELECT id, client_email, client_name FROM transactions WHERE id = ?').bind(txnId).first();
+				if (row) {
+					event.locals.clientSession = {
+						transactionId: row.id as string,
+						clientEmail: row.client_email as string,
+						clientName: row.client_name as string,
+						token: clientToken
+					};
+				}
+			}
+		} else if (clientToken && event.platform?.env?.MAGIC_LINKS) {
 			const { validateMagicLink } = await import('$lib/server/magic-links');
 			const clientSession = await validateMagicLink(event.platform.env, clientToken);
 			if (clientSession) {

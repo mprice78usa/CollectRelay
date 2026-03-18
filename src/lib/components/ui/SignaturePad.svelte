@@ -30,8 +30,8 @@
 		canvas.height = rect.height * dpr;
 		ctx.scale(dpr, dpr);
 
-		ctx.strokeStyle = '#18181b';
-		ctx.lineWidth = 2;
+		ctx.strokeStyle = '#ffffff';
+		ctx.lineWidth = 2.5;
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
 	}
@@ -119,7 +119,7 @@
 				offCtx.scale(dpr, dpr);
 				offCtx.fillStyle = 'transparent';
 				offCtx.clearRect(0, 0, 400, 200);
-				offCtx.fillStyle = '#18181b';
+				offCtx.fillStyle = '#ffffff';
 				offCtx.font = '40px "Segoe Script", "Brush Script MT", "Apple Chancery", cursive';
 				offCtx.textAlign = 'center';
 				offCtx.textBaseline = 'middle';

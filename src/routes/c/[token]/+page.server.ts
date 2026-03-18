@@ -19,91 +19,9 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	const db = platform?.env?.DB;
 
-	if (!db || dev) {
-		// Dev mode: return mock client-facing transaction
-		const mockItems: DbChecklistItem[] = [
-			{
-				id: 'mock-ci-1', transaction_id: session.transactionId, name: 'Government-issued ID',
-				description: 'Drivers license or passport', item_type: 'document', required: 1,
-				sort_order: 0, status: 'accepted', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
-			},
-			{
-				id: 'mock-ci-2', transaction_id: session.transactionId, name: 'Proof of income',
-				description: 'Recent pay stubs or tax return', item_type: 'document', required: 1,
-				sort_order: 1, status: 'rejected', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: 'Please upload a more recent pay stub (last 30 days).', signature_data: null
-			},
-			{
-				id: 'mock-ci-3', transaction_id: session.transactionId, name: 'Confirm mailing address',
-				description: 'Your current mailing address', item_type: 'question', required: 1,
-				sort_order: 2, status: 'pending', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
-},
-			{
-				id: 'mock-ci-4', transaction_id: session.transactionId, name: 'Pre-approval letter',
-				description: 'From your lender', item_type: 'document', required: 1,
-				sort_order: 3, status: 'pending', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
-},
-			{
-				id: 'mock-ci-5', transaction_id: session.transactionId, name: 'Agree to disclosure terms',
-				description: 'Acknowledge receipt of disclosure documents', item_type: 'checkbox', required: 1,
-				sort_order: 4, status: 'pending', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
-},
-			{
-				id: 'mock-ci-6', transaction_id: session.transactionId, name: 'Buyer signature',
-				description: 'Sign to acknowledge the purchase agreement', item_type: 'signature', required: 1,
-				sort_order: 5, status: 'pending', allowed_file_types: null, max_file_size: null,
-				example_text: null, due_date: null, answer: null,
-				reviewed_by: null, reviewed_at: null, review_note: null, signature_data: null
-}
-		];
-
-		const mockTransaction: TransactionWithItems = {
-			id: session.transactionId,
-			workspace_id: 'dev-workspace',
-			template_id: 'mock-tpl-1',
-			title: '123 Main St — Buyer Package',
-			description: null,
-			transaction_type: 'real_estate',
-			status: 'active',
-			client_name: session.clientName,
-			client_email: session.clientEmail,
-			client_phone: null,
-			due_date: '2026-03-15',
-			reminder_enabled: 1,
-			reminder_interval_days: 2,
-			created_by: 'dev-user',
-			created_at: '2026-03-01T10:00:00Z',
-			updated_at: '2026-03-01T10:00:00Z',
-			completed_at: null,
-			items: mockItems
-		};
-
-		const now = new Date();
-		const mockComments: DbComment[] = [
-			{
-				id: 'mc-1', transaction_id: session.transactionId, checklist_item_id: 'mock-ci-2',
-				author_type: 'pro', author_id: 'dev-user', author_name: 'Dev User',
-				content: 'Hi Sarah, can you upload a more recent pay stub? The one submitted is from 2 months ago.',
-				created_at: new Date(now.getTime() - 3 * 3600000).toISOString()
-			},
-			{
-				id: 'mc-2', transaction_id: session.transactionId, checklist_item_id: 'mock-ci-2',
-				author_type: 'client', author_id: null, author_name: 'Sarah Johnson',
-				content: 'Sure! I just got my latest one, uploading now.',
-				created_at: new Date(now.getTime() - 2 * 3600000).toISOString()
-			}
-		];
-
-		return { transaction: mockTransaction, files: [] as DbFile[], comments: mockComments, itemActivity: [] as any[], lastSeenAt: null as string | null };
+	if (!db) {
+		// No DB at all — return empty
+		return { transaction: null, files: [] as DbFile[], comments: [] as DbComment[], itemActivity: [] as any[], lastSeenAt: null as string | null };
 	}
 
 	const transaction = await getTransactionByIdForClient(db, session.transactionId);

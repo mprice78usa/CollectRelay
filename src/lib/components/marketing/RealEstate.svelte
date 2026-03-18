@@ -111,26 +111,17 @@
 				</div>
 
 				<div class="industry-visual">
-					<div class="mock-checklist">
-						<div class="mock-header">
-							<span class="mock-dot green"></span>
-							<span class="mock-title">{industry.mock.title}</span>
-							<span class="mock-progress">{industry.mock.progress}</span>
+					{#if activeTab === 'real-estate'}
+						<div class="industry-screenshot browser-frame">
+							<div class="browser-bar"><span></span><span></span><span></span></div>
+							<img src="/images/screenshots/project-detail.png" alt="Real estate project with document checklist" loading="lazy" />
 						</div>
-						{#each industry.mock.items as item}
-							<div class="mock-item {item.state}">
-								{#if item.state === 'accepted'}
-									<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
-								{:else if item.state === 'submitted'}
-									<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-								{:else}
-									<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>
-								{/if}
-								<span>{item.name}</span>
-								<span class="mock-status">{item.status}</span>
-							</div>
-						{/each}
-					</div>
+					{:else}
+						<div class="industry-screenshot browser-frame">
+							<div class="browser-bar"><span></span><span></span><span></span></div>
+							<img src="/images/screenshots/documents.png" alt="Document center with construction forms" loading="lazy" />
+						</div>
+					{/if}
 				</div>
 			</div>
 		{/key}
@@ -296,72 +287,44 @@
 		justify-content: center;
 	}
 
-	.mock-checklist {
+	.industry-screenshot {
 		width: 100%;
-		max-width: 380px;
-		background-color: var(--bg-primary);
-		border: 1px solid var(--border-color);
+		max-width: 100%;
 		border-radius: var(--radius-xl);
 		overflow: hidden;
-		box-shadow: var(--shadow-lg);
 	}
 
-	.mock-header {
+	.industry-screenshot img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	/* Browser chrome frame */
+	.browser-frame {
+		background: #1e2030;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(16, 185, 129, 0.06);
+	}
+
+	.browser-bar {
 		display: flex;
 		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-lg);
-		border-bottom: 1px solid var(--border-color);
-		font-size: var(--font-size-sm);
+		gap: 6px;
+		padding: 10px 14px;
+		background: #161825;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 	}
 
-	.mock-dot {
-		width: 8px;
-		height: 8px;
+	.browser-bar span {
+		width: 10px;
+		height: 10px;
 		border-radius: 50%;
 	}
 
-	.mock-dot.green {
-		background-color: var(--color-success);
-	}
-
-	.mock-title {
-		font-weight: 600;
-		flex: 1;
-	}
-
-	.mock-progress {
-		color: var(--text-muted);
-		font-size: var(--font-size-xs);
-	}
-
-	.mock-item {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-md) var(--space-lg);
-		border-bottom: 1px solid var(--border-color);
-		font-size: var(--font-size-sm);
-	}
-
-	.mock-item:last-child {
-		border-bottom: none;
-	}
-
-	.mock-item span:first-of-type {
-		flex: 1;
-	}
-
-	.mock-status {
-		font-size: var(--font-size-xs);
-	}
-
-	.mock-item.accepted { color: var(--color-success); }
-	.mock-item.accepted .mock-status { color: var(--color-success); }
-	.mock-item.submitted { color: var(--color-info); }
-	.mock-item.submitted .mock-status { color: var(--color-info); }
-	.mock-item.missing { color: var(--text-muted); }
-	.mock-item.missing .mock-status { color: var(--text-muted); }
+	.browser-bar span:first-child { background: #ff5f57; }
+	.browser-bar span:nth-child(2) { background: #febc2e; }
+	.browser-bar span:nth-child(3) { background: #28c840; }
 
 	@media (max-width: 768px) {
 		.industry-content {

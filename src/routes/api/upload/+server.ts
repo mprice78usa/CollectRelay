@@ -17,9 +17,15 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	const db = platform?.env?.DB;
 	const bucket = platform?.env?.FILES_BUCKET;
 
-	if (!db || !bucket) {
-		throw error(503, 'Storage not available');
+	if (!db) {
+		throw error(503, 'Database not available');
 	}
+
+	// Dev mode: create a mock bucket if R2 isn't available
+	const devBucket = !bucket ? {
+		async put(_key: string, _body: any, _opts?: any) { return {}; }
+	} as any : null;
+	const storage = bucket || devBucket;
 
 	// Auth: either Pro user or client session
 	const isClient = !!locals.clientSession;
@@ -70,8 +76,9 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	const safeName = sanitizeFilename(file.name);
 	const r2Key = `transactions/${transactionId}/${checklistItemId}/${fileId}/${safeName}`;
 
-	// Upload to R2
-	await bucket.put(r2Key, file.stream(), {
+	// Upload to R2 (or mock in dev)
+	const fileBytes = await file.arrayBuffer();
+	await storage.put(r2Key, fileBytes, {
 		httpMetadata: {
 			contentType: file.type || 'application/octet-stream'
 		}
@@ -91,12 +98,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	// Auto-convert image uploads to PDF (non-blocking)
 	if (isConvertibleImage(file.type)) {
 		try {
-			const imageBytes = await file.arrayBuffer();
+			const imageBytes = fileBytes;
 			const pdfBytes = await convertImageToPdf(imageBytes, file.type);
 			const pdfName = safeName.replace(/\.(jpg|jpeg|png)$/i, '.pdf');
 			const pdfR2Key = `transactions/${transactionId}/${checklistItemId}/${fileId}/${pdfName}`;
 
-			await bucket.put(pdfR2Key, pdfBytes, {
+			await storage.put(pdfR2Key, pdfBytes, {
 				httpMetadata: { contentType: 'application/pdf' }
 			});
 

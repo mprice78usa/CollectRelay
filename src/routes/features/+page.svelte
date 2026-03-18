@@ -17,6 +17,10 @@
 			<span class="badge">Platform</span>
 			<h1>Everything you need to collect documents</h1>
 			<p class="hero-sub">One platform for checklists, uploads, e-signatures, reporting, and team collaboration — built for professionals who manage client paperwork.</p>
+			<div class="hero-screenshot browser-frame">
+				<div class="browser-bar"><span></span><span></span><span></span></div>
+				<img src="/images/screenshots/dashboard-full.png" alt="CollectRelay dashboard showing projects, pipeline, and activity" loading="lazy" />
+			</div>
 		</div>
 	</section>
 
@@ -36,6 +40,7 @@
 					</div>
 					<h3>Transaction Management</h3>
 					<p>Create and track deals with checklists, milestones, partners, and status workflows. Move transactions from Draft to Completed with full visibility at every stage.</p>
+					<div class="feature-screenshot browser-frame"><div class="browser-bar"><span></span><span></span><span></span></div><img src="/images/screenshots/projects-list.png" alt="Projects list with status badges and progress bars" loading="lazy" /></div>
 				</div>
 				<div class="feature-card">
 					<div class="icon-wrap accent-blue">
@@ -45,6 +50,7 @@
 					</div>
 					<h3>Document Collection</h3>
 					<p>Secure client portal for uploading, reviewing, and approving documents. Clients get a magic link — no login required. Drag-and-drop uploads with mobile support.</p>
+					<div class="feature-screenshot browser-frame"><div class="browser-bar"><span></span><span></span><span></span></div><img src="/images/screenshots/project-detail.png" alt="Project detail view with document checklist" loading="lazy" /></div>
 				</div>
 				<div class="feature-card">
 					<div class="icon-wrap accent-purple">
@@ -54,6 +60,7 @@
 					</div>
 					<h3>Templates</h3>
 					<p>Save and reuse transaction templates with pre-built checklists and milestones. Start with four included templates or create custom ones for your workflow.</p>
+					<div class="feature-screenshot browser-frame"><div class="browser-bar"><span></span><span></span><span></span></div><img src="/images/screenshots/templates.png" alt="Template library with reusable checklists" loading="lazy" /></div>
 				</div>
 				<div class="feature-card">
 					<div class="icon-wrap accent-amber">
@@ -92,6 +99,10 @@
 			<div class="section-header">
 				<h2>Analytics &amp; Insights</h2>
 				<p>Data-driven decision making for your pipeline</p>
+			</div>
+			<div class="section-screenshot browser-frame">
+				<div class="browser-bar"><span></span><span></span><span></span></div>
+				<img src="/images/screenshots/reports.png" alt="Reports dashboard with pipeline funnel, commission tracker, and activity trends" loading="lazy" />
 			</div>
 			<div class="grid grid-2">
 				<div class="feature-card">
@@ -294,6 +305,62 @@
 		margin: 0 auto;
 		line-height: 1.6;
 	}
+
+	.hero-screenshot {
+		margin-top: var(--space-4xl);
+		max-width: 960px;
+		margin-left: auto;
+		margin-right: auto;
+		border-radius: var(--radius-xl);
+		overflow: hidden;
+	}
+
+	.hero-screenshot img,
+	.feature-screenshot img,
+	.section-screenshot img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.feature-screenshot {
+		margin-top: var(--space-lg);
+		border-radius: var(--radius-md);
+		overflow: hidden;
+	}
+
+	.section-screenshot {
+		max-width: 800px;
+		margin: 0 auto var(--space-3xl);
+		border-radius: var(--radius-xl);
+		overflow: hidden;
+	}
+
+	/* Browser chrome frame */
+	.browser-frame {
+		background: #1e2030;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(16, 185, 129, 0.06);
+	}
+
+	.browser-bar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 14px;
+		background: #161825;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.browser-bar span {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+
+	.browser-bar span:first-child { background: #ff5f57; }
+	.browser-bar span:nth-child(2) { background: #febc2e; }
+	.browser-bar span:nth-child(3) { background: #28c840; }
 
 	/* Sections */
 	.feature-section {

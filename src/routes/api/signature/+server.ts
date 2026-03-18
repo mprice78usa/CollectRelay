@@ -13,9 +13,12 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	const db = platform?.env?.DB;
 	const bucket = platform?.env?.FILES_BUCKET;
 
-	if (!db || !bucket) {
-		throw error(503, 'Storage not available');
+	if (!db) {
+		throw error(503, 'Database not available');
 	}
+
+	// Dev mode: create a mock bucket if R2 isn't available
+	const storage = bucket || { async put() { return {}; } } as any;
 
 	// Auth: client session only
 	if (!locals.clientSession) {
@@ -56,7 +59,8 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	const fileId = generateId();
 	const r2Key = `transactions/${session.transactionId}/${itemId}/${fileId}/signature.png`;
 
-	await bucket.put(r2Key, signatureFile.stream(), {
+	const sigBytes = await signatureFile.arrayBuffer();
+	await storage.put(r2Key, sigBytes, {
 		httpMetadata: { contentType: 'image/png' }
 	});
 

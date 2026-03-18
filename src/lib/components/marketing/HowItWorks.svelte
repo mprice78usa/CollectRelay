@@ -15,6 +15,10 @@
 				</div>
 				<h3>Build your request</h3>
 				<p>Start from a template or create your own checklist in minutes.</p>
+				<div class="step-screenshot browser-frame">
+					<div class="browser-bar"><span></span><span></span><span></span></div>
+					<img src="/images/screenshots/template-builder.png" alt="Template builder showing checklist items" loading="lazy" />
+				</div>
 			</div>
 
 			<div class="step-connector" aria-hidden="true">
@@ -33,6 +37,9 @@
 				</div>
 				<h3>Send one link</h3>
 				<p>Clients upload, scan, and e-sign from their phone or computer. No accounts. No confusion.</p>
+				<div class="step-screenshot step-screenshot-phone">
+					<img src="/images/screenshots/client-portal-poster.png" alt="Client portal on mobile device" loading="lazy" />
+				</div>
 			</div>
 
 			<div class="step-connector" aria-hidden="true">
@@ -51,6 +58,10 @@
 				</div>
 				<h3>Stay in control</h3>
 				<p>Accept, reject, or request a fix. Track every change with a full timeline.</p>
+				<div class="step-screenshot browser-frame">
+					<div class="browser-bar"><span></span><span></span><span></span></div>
+					<img src="/images/screenshots/activity-feed.png" alt="Activity feed showing document uploads and reviews" loading="lazy" />
+				</div>
 			</div>
 		</div>
 
@@ -182,6 +193,56 @@
 		font-size: var(--font-size-md);
 		line-height: 1.6;
 	}
+
+	.step-screenshot {
+		margin-top: var(--space-lg);
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	}
+
+	.step-screenshot img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.step-screenshot-phone {
+		max-width: 160px;
+		margin-left: auto;
+		margin-right: auto;
+		border-radius: 20px;
+		border: 2px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 40px rgba(16, 185, 129, 0.08);
+	}
+
+	/* Browser chrome frame */
+	.browser-frame {
+		background: #1e2030;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 60px rgba(16, 185, 129, 0.06);
+	}
+
+	.browser-bar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 10px 14px;
+		background: #161825;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.browser-bar span {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		background: rgba(255, 255, 255, 0.12);
+	}
+
+	.browser-bar span:first-child { background: #ff5f57; }
+	.browser-bar span:nth-child(2) { background: #febc2e; }
+	.browser-bar span:nth-child(3) { background: #28c840; }
 
 	.step-connector {
 		display: flex;
