@@ -4,7 +4,7 @@
 		<p>Send requests. Collect files. Stay on track.</p>
 		<div class="cta-actions">
 			<a href="/register" class="btn-primary">Get started free</a>
-			<a href="mailto:info@collectrelay.com" class="btn-secondary">Contact us</a>
+			<a href="/contact" class="btn-secondary">Contact us</a>
 		</div>
 		<div class="trust-signals">
 			<span>No credit card required</span>

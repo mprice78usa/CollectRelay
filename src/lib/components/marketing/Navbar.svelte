@@ -3,7 +3,6 @@
 
 	let scrolled = $state(false);
 	let mobileOpen = $state(false);
-	let industriesOpen = $state(false);
 
 	function handleScroll() {
 		scrolled = window.scrollY > 20;
@@ -14,29 +13,15 @@
 			e.preventDefault();
 			mobileOpen = false;
 			if (page.url.pathname === '/') {
-				// On homepage: smooth scroll to section
 				document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth' });
 			} else {
-				// On other pages: hard navigate to homepage + anchor
 				window.location.href = '/#' + hash;
 			}
 		};
 	}
-
-	function closeAll() {
-		mobileOpen = false;
-		industriesOpen = false;
-	}
-
-	function handleClickOutside(e: MouseEvent) {
-		const target = e.target as HTMLElement;
-		if (!target.closest('.dropdown')) {
-			industriesOpen = false;
-		}
-	}
 </script>
 
-<svelte:window onscroll={handleScroll} onclick={handleClickOutside} />
+<svelte:window onscroll={handleScroll} />
 
 <nav class="navbar" class:scrolled>
 	<div class="navbar-inner container">
@@ -53,43 +38,9 @@
 		<div class="nav-links" class:open={mobileOpen}>
 			<a href="/#how-it-works" onclick={sectionLink('how-it-works')}>How it works</a>
 			<a href="/features" onclick={() => mobileOpen = false}>Features</a>
-
-			<!-- Industries dropdown -->
-			<div class="dropdown">
-				<button
-					class="dropdown-trigger"
-					onclick={() => industriesOpen = !industriesOpen}
-					aria-expanded={industriesOpen}
-				>
-					Industries
-					<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron" class:rotated={industriesOpen}>
-						<polyline points="6 9 12 15 18 9"/>
-					</svg>
-				</button>
-				{#if industriesOpen}
-					<div class="dropdown-menu">
-						<a href="/industries/real-estate" onclick={closeAll}>
-							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-							</svg>
-							Real Estate
-						</a>
-						<a href="/industries/contractors" onclick={closeAll}>
-							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-								<path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/>
-							</svg>
-							Contractors
-						</a>
-						<a href="/pro" onclick={closeAll}>
-							<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-								<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-							</svg>
-							Pro (AI Tools)
-						</a>
-					</div>
-				{/if}
-			</div>
-
+			<a href="/industries/real-estate" onclick={() => mobileOpen = false}>Real Estate</a>
+			<a href="/industries/contractors" onclick={() => mobileOpen = false}>Contractors</a>
+			<a href="/pro" onclick={() => mobileOpen = false}>Pro</a>
 			<a href="/security" onclick={() => mobileOpen = false}>Security</a>
 			<a href="/pricing" onclick={() => mobileOpen = false}>Pricing</a>
 
@@ -157,88 +108,18 @@
 	.nav-links {
 		display: flex;
 		align-items: center;
-		gap: var(--space-xxl);
+		gap: var(--space-xl);
 	}
 
-	.nav-links a, .dropdown-trigger {
-		color: var(--text-secondary);
-		font-size: var(--font-size-md);
-		transition: color var(--transition-fast);
-	}
-
-	.nav-links a:hover, .dropdown-trigger:hover {
-		color: var(--text-primary);
-	}
-
-	/* Dropdown */
-	.dropdown {
-		position: relative;
-	}
-
-	.dropdown-trigger {
-		display: flex;
-		align-items: center;
-		gap: 4px;
-		background: none;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-		font-family: inherit;
-	}
-
-	.chevron {
-		transition: transform var(--transition-fast);
-	}
-
-	.chevron.rotated {
-		transform: rotate(180deg);
-	}
-
-	.dropdown-menu {
-		position: absolute;
-		top: calc(100% + var(--space-md));
-		left: 50%;
-		transform: translateX(-50%);
-		min-width: 200px;
-		background: var(--bg-secondary);
-		border: 1px solid var(--border-color);
-		border-radius: var(--radius-lg);
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-		padding: var(--space-sm);
-		display: flex;
-		flex-direction: column;
-		animation: dropdown-in 0.15s ease-out;
-	}
-
-	@keyframes dropdown-in {
-		from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
-		to { opacity: 1; transform: translateX(-50%) translateY(0); }
-	}
-
-	.dropdown-menu a {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		padding: var(--space-sm) var(--space-md);
+	.nav-links a {
 		color: var(--text-secondary);
 		font-size: var(--font-size-sm);
-		border-radius: var(--radius-md);
-		transition: all var(--transition-fast);
+		transition: color var(--transition-fast);
 		white-space: nowrap;
 	}
 
-	.dropdown-menu a:hover {
-		background: var(--bg-tertiary);
+	.nav-links a:hover {
 		color: var(--text-primary);
-	}
-
-	.dropdown-menu a svg {
-		color: var(--text-muted);
-		flex-shrink: 0;
-	}
-
-	.dropdown-menu a:hover svg {
-		color: var(--color-accent);
 	}
 
 	.nav-actions {
@@ -304,19 +185,8 @@
 			display: flex;
 		}
 
-		.dropdown-menu {
-			position: static;
-			transform: none;
-			box-shadow: none;
-			border: none;
-			background: var(--bg-tertiary);
-			margin-top: var(--space-sm);
-			animation: none;
-		}
-
-		@keyframes dropdown-in {
-			from { opacity: 1; transform: none; }
-			to { opacity: 1; transform: none; }
+		.nav-links a {
+			font-size: var(--font-size-md);
 		}
 
 		.nav-actions {

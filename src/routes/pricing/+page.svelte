@@ -17,7 +17,7 @@
 			description: 'Try CollectRelay with no commitment',
 			features: {
 				transactions: '3 active',
-				templates: 'Starter 4 only',
+				templates: '4 built-in',
 				aiSummaries: '10/month',
 				eSignatures: true,
 				webhooks: false,
@@ -78,7 +78,7 @@
 			monthly: -1,
 			annualMonthly: -1,
 			cta: 'Talk to sales',
-			ctaHref: 'mailto:info@collectrelay.com',
+			ctaHref: '/contact',
 			popular: false,
 			description: 'For large organizations',
 			features: {
@@ -123,7 +123,7 @@
 		}
 		// Enterprise → sales
 		if (planKey === 'enterprise') {
-			window.location.href = 'mailto:info@collectrelay.com';
+			window.location.href = '/contact';
 			return;
 		}
 
@@ -329,7 +329,7 @@
 			<p>Start free — no credit card required. Upgrade when you're ready.</p>
 			<div class="cta-actions">
 				<a href="/register" class="btn-primary">Get started free</a>
-				<a href="mailto:info@collectrelay.com" class="btn-secondary">Talk to sales</a>
+				<a href="/contact" class="btn-secondary">Talk to sales</a>
 			</div>
 		</div>
 	</section>

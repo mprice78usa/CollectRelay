@@ -26,10 +26,17 @@
 					<h4>Industries</h4>
 					<a href="/industries/real-estate">Real Estate</a>
 					<a href="/industries/contractors">Contractors</a>
-					</div>
+					<a href="/pro">Pro (AI Tools)</a>
+				</div>
 				<div class="footer-col">
 					<h4>Company</h4>
-					<a href="mailto:info@collectrelay.com">Contact</a>
+					<a href="/contact">Contact</a>
+					<a href="mailto:info@collectrelay.com">Support</a>
+				</div>
+				<div class="footer-col">
+					<h4>Legal</h4>
+					<a href="/terms">Terms of Service</a>
+					<a href="/privacy">Privacy Policy</a>
 				</div>
 			</div>
 		</div>
@@ -102,14 +109,22 @@
 		color: var(--text-secondary);
 	}
 
-	@media (max-width: 560px) {
+	@media (max-width: 768px) {
 		.footer-inner {
 			flex-direction: column;
 			gap: var(--space-xxl);
 		}
 
 		.footer-links {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
 			gap: var(--space-xxl);
+		}
+	}
+
+	@media (max-width: 400px) {
+		.footer-links {
+			grid-template-columns: 1fr;
 		}
 	}
 </style>
