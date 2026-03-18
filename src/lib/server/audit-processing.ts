@@ -68,6 +68,15 @@ export async function analyzeImageForAudit(
 	ai: Ai,
 	imageBytes: ArrayBuffer
 ): Promise<string> {
+	// First call: accept the model license (required once, idempotent)
+	try {
+		await ai.run(VISION_MODEL, {
+			messages: [{ role: 'user', content: 'agree' }]
+		});
+	} catch {
+		// License may already be accepted — continue
+	}
+
 	const result = await ai.run(VISION_MODEL, {
 		messages: [{ role: 'user', content: AUDIT_VISION_PROMPT }],
 		image: [...new Uint8Array(imageBytes)]

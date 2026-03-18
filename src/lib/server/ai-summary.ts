@@ -55,6 +55,15 @@ export async function summarizeFile(
 }
 
 async function summarizeImage(ai: Ai, imageBytes: ArrayBuffer): Promise<string> {
+	// Accept model license (required once, idempotent)
+	try {
+		await ai.run(VISION_MODEL, {
+			messages: [{ role: 'user', content: 'agree' }]
+		});
+	} catch {
+		// License may already be accepted — continue
+	}
+
 	const result = await ai.run(VISION_MODEL, {
 		messages: [{ role: 'user', content: SUMMARY_PROMPT }],
 		image: [...new Uint8Array(imageBytes)]
