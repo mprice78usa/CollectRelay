@@ -14,7 +14,7 @@
 			cta: 'Get started',
 			ctaHref: '/register',
 			popular: false,
-			description: 'Try CollectRelay with no commitment',
+			description: 'Best for trying it out',
 			features: {
 				transactions: '3 active',
 				templates: '4 built-in',
@@ -36,7 +36,7 @@
 			annualTotal: 290,
 			cta: 'Get started',
 			popular: false,
-			description: 'For solo professionals',
+			description: 'Best for solo agents & contractors',
 			features: {
 				transactions: 'Unlimited',
 				templates: 'Unlimited custom',
@@ -58,7 +58,7 @@
 			annualTotal: 790,
 			cta: 'Get started',
 			popular: true,
-			description: 'For brokerages & teams',
+			description: 'Best for small teams & brokerages',
 			features: {
 				transactions: 'Unlimited',
 				templates: 'Unlimited',
@@ -80,7 +80,7 @@
 			cta: 'Talk to sales',
 			ctaHref: '/contact',
 			popular: false,
-			description: 'For large organizations',
+			description: 'Best for large organizations',
 			features: {
 				transactions: 'Unlimited',
 				templates: 'Unlimited',

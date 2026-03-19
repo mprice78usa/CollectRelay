@@ -75,6 +75,15 @@
 			<p class="email-fallback">
 				Or email us directly at <a href="mailto:info@collectrelay.com">info@collectrelay.com</a>
 			</p>
+
+			<div class="calendly-section">
+				<h3>Prefer a live conversation?</h3>
+				<p>Book a 15-minute call to discuss your needs, see a demo, or talk enterprise plans.</p>
+				<a href="https://calendly.com/collectrelay" target="_blank" rel="noopener" class="btn-outline">
+					<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+					Schedule a call
+				</a>
+			</div>
 		{/if}
 	</div>
 </main>
@@ -229,5 +238,43 @@
 		font-size: var(--font-size-md);
 		line-height: 1.6;
 		margin-bottom: var(--space-xxl);
+	}
+
+	.calendly-section {
+		margin-top: var(--space-4xl);
+		padding-top: var(--space-4xl);
+		border-top: 1px solid var(--border-color);
+		max-width: 560px;
+	}
+
+	.calendly-section h3 {
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		margin-bottom: var(--space-sm);
+	}
+
+	.calendly-section p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-md);
+		line-height: 1.6;
+		margin-bottom: var(--space-xl);
+	}
+
+	.btn-outline {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm) var(--space-xl);
+		border: 1px solid var(--border-color-light);
+		border-radius: var(--radius-lg);
+		color: var(--text-primary);
+		font-size: var(--font-size-md);
+		font-weight: 500;
+		transition: all var(--transition-fast);
+	}
+
+	.btn-outline:hover {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
 	}
 </style>

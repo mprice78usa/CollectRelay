@@ -24,6 +24,7 @@
 						<line x1="12" y1="3" x2="12" y2="15"/>
 					</svg>
 				</div>
+				<span class="card-badge popular">Popular</span>
 				<h3>Client-friendly uploads</h3>
 				<p>Drag-and-drop on desktop, camera scan to PDF on mobile, and automatic organization.</p>
 			</div>
@@ -45,6 +46,7 @@
 						<path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
 					</svg>
 				</div>
+				<span class="card-badge popular">Popular</span>
 				<h3>Built-in e-signatures</h3>
 				<p>Send only what needs signing. Store signed copies automatically back in the packet.</p>
 			</div>
@@ -69,6 +71,7 @@
 						<polyline points="12 6 12 12 16 14"/>
 					</svg>
 				</div>
+				<span class="card-badge new">New</span>
 				<h3>Audit trail and correspondence log</h3>
 				<p>Every request, upload, reminder, and approval is recorded.</p>
 			</div>
@@ -125,6 +128,27 @@
 		border-radius: var(--radius-lg);
 		color: var(--color-accent);
 		margin-bottom: var(--space-lg);
+	}
+
+	.card-badge {
+		display: inline-block;
+		padding: 2px 10px;
+		font-size: 11px;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		border-radius: var(--radius-full);
+		margin-bottom: var(--space-sm);
+	}
+
+	.card-badge.popular {
+		background: rgba(16, 185, 129, 0.12);
+		color: #10b981;
+	}
+
+	.card-badge.new {
+		background: rgba(74, 122, 245, 0.12);
+		color: #4a7af5;
 	}
 
 	h3 {

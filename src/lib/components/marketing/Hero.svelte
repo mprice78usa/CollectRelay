@@ -38,7 +38,7 @@
 <style>
 	.hero {
 		position: relative;
-		padding: calc(var(--space-5xl) + 60px) 0 var(--space-4xl);
+		padding: calc(var(--space-4xl) + 60px) 0 var(--space-3xl);
 		overflow: hidden;
 	}
 
@@ -172,7 +172,7 @@
 
 	@media (max-width: 768px) {
 		.hero {
-			padding: calc(var(--space-4xl) + 60px) 0 var(--space-3xl);
+			padding: calc(var(--space-3xl) + 60px) 0 var(--space-xxl);
 		}
 
 		.hero-content {
