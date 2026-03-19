@@ -131,7 +131,12 @@ export async function extractAuditFindings(
 	}
 
 	try {
-		return JSON.parse(textBlock.text) as AuditFindings;
+		// Strip markdown code fences if present (```json ... ```)
+		let jsonText = textBlock.text.trim();
+		if (jsonText.startsWith('```')) {
+			jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+		}
+		return JSON.parse(jsonText) as AuditFindings;
 	} catch {
 		console.error('Failed to parse Claude audit response as JSON:', textBlock.text);
 		return {

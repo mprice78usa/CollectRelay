@@ -112,7 +112,12 @@ export async function extractTasksFromPhoto(
 	}
 
 	try {
-		return JSON.parse(textBlock.text) as AIActions;
+		// Strip markdown code fences if present (```json ... ```)
+		let jsonText = textBlock.text.trim();
+		if (jsonText.startsWith('```')) {
+			jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+		}
+		return JSON.parse(jsonText) as AIActions;
 	} catch {
 		console.error('Failed to parse Claude response as JSON:', textBlock.text);
 		return {

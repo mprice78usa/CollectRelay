@@ -2076,7 +2076,7 @@
 		border: 1px solid var(--border-color);
 		border-radius: var(--radius-md);
 		padding: var(--space-sm) var(--space-md);
-		font-size: var(--font-size-sm);
+		font-size: 16px; /* Prevents iOS Safari auto-zoom on focus */
 		color: var(--text-primary);
 		font-family: inherit;
 	}
