@@ -27,21 +27,13 @@
 						<a href="/pricing" class="btn-secondary">View Pricing</a>
 					</div>
 				</div>
-				<div class="hero-phones">
-					<div class="phone-stack">
-						<div class="phone-frame phone-back">
-							<video autoplay loop muted playsinline class="phone-video">
-								<source src="/images/screenshots/pro-voice-mobile.mp4" type="video/mp4" />
-							</video>
-							<span class="phone-label">Voice Notes</span>
-						</div>
-						<div class="phone-frame phone-front">
-							<video autoplay loop muted playsinline class="phone-video">
-								<source src="/images/screenshots/pro-photo-mobile.mp4" type="video/mp4" />
-							</video>
-							<span class="phone-label">Photo Capture</span>
-						</div>
+				<div class="hero-phone">
+					<div class="phone-frame">
+						<video autoplay loop muted playsinline class="phone-video">
+							<source src="/images/screenshots/pro-photo-mobile.mp4" type="video/mp4" />
+						</video>
 					</div>
+					<span class="phone-caption">AI photo capture in action</span>
 				</div>
 			</div>
 		</section>
@@ -338,61 +330,38 @@
 		min-width: 0;
 	}
 
-	.hero-phones {
+	.hero-phone {
 		flex-shrink: 0;
-	}
-
-	.phone-stack {
-		position: relative;
-		width: 320px;
-		height: 520px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
 	}
 
 	.phone-frame {
-		position: absolute;
-		width: 230px;
-		height: 470px;
+		width: 260px;
+		height: 530px;
 		background: #1a1a2e;
-		border-radius: 36px;
-		padding: 10px;
-		box-shadow:
-			0 0 0 2px rgba(255, 255, 255, 0.08),
-			0 20px 60px rgba(0, 0, 0, 0.5);
-		overflow: hidden;
-	}
-
-	.phone-back {
-		top: 0;
-		left: 0;
-		z-index: 1;
-	}
-
-	.phone-front {
-		top: 40px;
-		left: 80px;
-		z-index: 2;
+		border-radius: 38px;
+		padding: 11px;
 		box-shadow:
 			0 0 0 2px rgba(255, 255, 255, 0.08),
 			0 20px 60px rgba(0, 0, 0, 0.5),
 			0 0 80px rgba(16, 185, 129, 0.08);
+		overflow: hidden;
 	}
 
 	.phone-video {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		border-radius: 26px;
+		border-radius: 27px;
 	}
 
-	.phone-label {
-		position: absolute;
-		bottom: -28px;
-		left: 50%;
-		transform: translateX(-50%);
-		font-size: var(--font-size-xs);
+	.phone-caption {
+		font-size: var(--font-size-sm);
 		color: var(--text-muted);
 		font-weight: 500;
-		white-space: nowrap;
 	}
 
 	.badge {
@@ -708,11 +677,8 @@
 		.hero-text { text-align: center; }
 		.lead { margin-left: auto; margin-right: auto; }
 		.hero-actions { justify-content: center; }
-		.phone-stack { width: 260px; height: 420px; }
-		.phone-frame { width: 190px; height: 380px; border-radius: 30px; padding: 8px; }
-		.phone-video { border-radius: 22px; }
-		.phone-back { left: 0; top: 0; }
-		.phone-front { left: 60px; top: 30px; }
+		.phone-frame { width: 210px; height: 430px; border-radius: 32px; padding: 9px; }
+		.phone-video { border-radius: 23px; }
 		.features-grid, .steps-grid { grid-template-columns: 1fr; }
 		.comparison-card { flex-direction: column; text-align: center; }
 		.comparison-arrow { transform: rotate(90deg); }
