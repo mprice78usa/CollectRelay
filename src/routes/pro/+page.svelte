@@ -14,15 +14,35 @@
 	<div class="container">
 		<!-- Hero -->
 		<section class="hero-section">
-			<span class="badge">CollectRelay Pro</span>
-			<h1>Close the Gap Between<br />the Field and the Office</h1>
-			<p class="lead">
-				CollectRelay Pro uses Multimodal AI to turn site photos and voice notes into
-				professional project logs, punch lists, and change orders — all from your phone.
-			</p>
-			<div class="hero-actions">
-				<a href="/register" class="btn-primary">Start Free</a>
-				<a href="/pricing" class="btn-secondary">View Pricing</a>
+			<div class="hero-content">
+				<div class="hero-text">
+					<span class="badge">CollectRelay Pro</span>
+					<h1>Close the Gap Between<br />the Field and the Office</h1>
+					<p class="lead">
+						CollectRelay Pro uses Multimodal AI to turn site photos and voice notes into
+						professional project logs, punch lists, and change orders — all from your phone.
+					</p>
+					<div class="hero-actions">
+						<a href="/register" class="btn-primary">Start Free</a>
+						<a href="/pricing" class="btn-secondary">View Pricing</a>
+					</div>
+				</div>
+				<div class="hero-phones">
+					<div class="phone-stack">
+						<div class="phone-frame phone-back">
+							<video autoplay loop muted playsinline class="phone-video">
+								<source src="/images/screenshots/pro-voice-mobile.mp4" type="video/mp4" />
+							</video>
+							<span class="phone-label">Voice Notes</span>
+						</div>
+						<div class="phone-frame phone-front">
+							<video autoplay loop muted playsinline class="phone-video">
+								<source src="/images/screenshots/pro-photo-mobile.mp4" type="video/mp4" />
+							</video>
+							<span class="phone-label">Photo Capture</span>
+						</div>
+					</div>
+				</div>
 			</div>
 		</section>
 
@@ -303,9 +323,76 @@
 
 	/* Hero */
 	.hero-section {
-		text-align: center;
 		margin-bottom: var(--space-5xl);
 		padding-top: var(--space-3xl);
+	}
+
+	.hero-content {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4xl);
+	}
+
+	.hero-text {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.hero-phones {
+		flex-shrink: 0;
+	}
+
+	.phone-stack {
+		position: relative;
+		width: 320px;
+		height: 520px;
+	}
+
+	.phone-frame {
+		position: absolute;
+		width: 230px;
+		height: 470px;
+		background: #1a1a2e;
+		border-radius: 36px;
+		padding: 10px;
+		box-shadow:
+			0 0 0 2px rgba(255, 255, 255, 0.08),
+			0 20px 60px rgba(0, 0, 0, 0.5);
+		overflow: hidden;
+	}
+
+	.phone-back {
+		top: 0;
+		left: 0;
+		z-index: 1;
+	}
+
+	.phone-front {
+		top: 40px;
+		left: 80px;
+		z-index: 2;
+		box-shadow:
+			0 0 0 2px rgba(255, 255, 255, 0.08),
+			0 20px 60px rgba(0, 0, 0, 0.5),
+			0 0 80px rgba(16, 185, 129, 0.08);
+	}
+
+	.phone-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 26px;
+	}
+
+	.phone-label {
+		position: absolute;
+		bottom: -28px;
+		left: 50%;
+		transform: translateX(-50%);
+		font-size: var(--font-size-xs);
+		color: var(--text-muted);
+		font-weight: 500;
+		white-space: nowrap;
 	}
 
 	.badge {
@@ -333,14 +420,13 @@
 		font-size: var(--font-size-lg);
 		color: var(--text-secondary);
 		line-height: 1.7;
-		max-width: 650px;
-		margin: 0 auto var(--space-xxl);
+		max-width: 540px;
+		margin-bottom: var(--space-xxl);
 	}
 
 	.hero-actions {
 		display: flex;
 		gap: var(--space-md);
-		justify-content: center;
 		flex-wrap: wrap;
 	}
 
@@ -618,6 +704,15 @@
 	}
 
 	@media (max-width: 768px) {
+		.hero-content { flex-direction: column; text-align: center; }
+		.hero-text { text-align: center; }
+		.lead { margin-left: auto; margin-right: auto; }
+		.hero-actions { justify-content: center; }
+		.phone-stack { width: 260px; height: 420px; }
+		.phone-frame { width: 190px; height: 380px; border-radius: 30px; padding: 8px; }
+		.phone-video { border-radius: 22px; }
+		.phone-back { left: 0; top: 0; }
+		.phone-front { left: 60px; top: 30px; }
 		.features-grid, .steps-grid { grid-template-columns: 1fr; }
 		.comparison-card { flex-direction: column; text-align: center; }
 		.comparison-arrow { transform: rotate(90deg); }

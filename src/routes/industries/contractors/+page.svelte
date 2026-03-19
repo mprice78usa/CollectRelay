@@ -67,6 +67,25 @@
 			<h2 class="section-title">Field Tools That Work as Hard as You Do</h2>
 			<p class="section-sub">Voice memos from the field become structured task lists. Notes become action items. AI does the organizing.</p>
 
+			<div class="pro-demo-phones">
+				<div class="demo-phone">
+					<div class="demo-phone-frame">
+						<video autoplay loop muted playsinline class="demo-phone-video">
+							<source src="/images/screenshots/pro-voice-mobile.mp4" type="video/mp4" />
+						</video>
+					</div>
+					<span class="demo-phone-label">Voice Notes → AI Tasks</span>
+				</div>
+				<div class="demo-phone">
+					<div class="demo-phone-frame">
+						<video autoplay loop muted playsinline class="demo-phone-video">
+							<source src="/images/screenshots/pro-photo-mobile.mp4" type="video/mp4" />
+						</video>
+					</div>
+					<span class="demo-phone-label">Photo Capture → AI Analysis</span>
+				</div>
+			</div>
+
 			<div class="features-grid grid-2">
 				<div class="feature-card ai-card">
 					<div class="feature-icon accent">
@@ -538,8 +557,51 @@
 		color: var(--text-primary);
 	}
 
+	.pro-demo-phones {
+		display: flex;
+		justify-content: center;
+		gap: var(--space-4xl);
+		margin-bottom: var(--space-4xl);
+	}
+
+	.demo-phone {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-md);
+	}
+
+	.demo-phone-frame {
+		width: 220px;
+		height: 450px;
+		background: #1a1a2e;
+		border-radius: 36px;
+		padding: 10px;
+		box-shadow:
+			0 0 0 2px rgba(255, 255, 255, 0.08),
+			0 20px 60px rgba(0, 0, 0, 0.5),
+			0 0 60px rgba(16, 185, 129, 0.06);
+		overflow: hidden;
+	}
+
+	.demo-phone-video {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		border-radius: 26px;
+	}
+
+	.demo-phone-label {
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 500;
+	}
+
 	@media (max-width: 768px) {
 		.features-grid, .features-grid.grid-2, .steps-grid { grid-template-columns: 1fr; }
 		.ai-features { flex-direction: column; align-items: center; }
+		.pro-demo-phones { flex-direction: column; align-items: center; gap: var(--space-3xl); }
+		.demo-phone-frame { width: 190px; height: 390px; border-radius: 30px; padding: 8px; }
+		.demo-phone-video { border-radius: 22px; }
 	}
 </style>
