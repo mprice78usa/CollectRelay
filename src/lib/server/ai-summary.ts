@@ -54,10 +54,22 @@ export async function summarizeFile(
 	}
 }
 
-async function summarizeImage(ai: Ai, imageBytes: ArrayBuffer): Promise<string> {
+async function summarizeImage(ai: Ai, imageBytes: ArrayBuffer, mimeType: string = 'image/jpeg'): Promise<string> {
+	const bytes = new Uint8Array(imageBytes);
+	let binary = '';
+	for (let i = 0; i < bytes.length; i++) {
+		binary += String.fromCharCode(bytes[i]);
+	}
+	const dataUri = `data:${mimeType};base64,${btoa(binary)}`;
+
 	const result = await ai.run(VISION_MODEL, {
-		messages: [{ role: 'user', content: SUMMARY_PROMPT }],
-		image: [...new Uint8Array(imageBytes)]
+		messages: [{
+			role: 'user',
+			content: [
+				{ type: 'text', text: SUMMARY_PROMPT },
+				{ type: 'image_url', image_url: { url: dataUri } }
+			]
+		}]
 	}) as { response?: string };
 
 	return result.response || 'Unable to generate summary.';

@@ -46,11 +46,25 @@ export interface AIActions {
  */
 export async function analyzeImage(
 	ai: Ai,
-	imageBytes: ArrayBuffer
+	imageBytes: ArrayBuffer,
+	mimeType: string = 'image/jpeg'
 ): Promise<string> {
+	// Convert to base64 data URI for vision model
+	const bytes = new Uint8Array(imageBytes);
+	let binary = '';
+	for (let i = 0; i < bytes.length; i++) {
+		binary += String.fromCharCode(bytes[i]);
+	}
+	const dataUri = `data:${mimeType};base64,${btoa(binary)}`;
+
 	const result = await ai.run(VISION_MODEL, {
-		messages: [{ role: 'user', content: VISION_PROMPT }],
-		image: [...new Uint8Array(imageBytes)]
+		messages: [{
+			role: 'user',
+			content: [
+				{ type: 'text', text: VISION_PROMPT },
+				{ type: 'image_url', image_url: { url: dataUri } }
+			]
+		}]
 	}) as { response?: string };
 
 	return result.response || '';
