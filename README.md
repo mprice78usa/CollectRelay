@@ -115,6 +115,25 @@ git push origin master && git push origin master:main
 npx wrangler pages deploy .svelte-kit/cloudflare --project-name collectrelay --branch main
 ```
 
+## Marketing Site
+
+Public pages at `collectrelay.com`:
+
+| Route | Page |
+|-------|------|
+| `/` | Homepage with product video, how it works, feature cards |
+| `/features` | Full feature breakdown with screenshots |
+| `/pricing` | Plan comparison table with FAQ |
+| `/security` | Security overview |
+| `/pro` | Pro AI tools for contractors |
+| `/contact` | Contact form + Calendly scheduling |
+| `/industries/real-estate` | Real estate vertical page |
+| `/industries/contractors` | Contractors vertical page |
+| `/terms` | Terms of Service |
+| `/privacy` | Privacy Policy |
+| `/login` | Login |
+| `/register` | Registration |
+
 ## Industries
 
 CollectRelay supports multiple industries with terminology mapping:

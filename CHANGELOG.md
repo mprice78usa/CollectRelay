@@ -2,6 +2,42 @@
 
 All notable changes to CollectRelay will be documented in this file.
 
+## [0.13.0] - 2026-03-18
+
+### Added
+- **Contact page** (`/contact`) — Contact form with Calendly scheduling embed for Enterprise demos.
+- **Terms of Service** (`/terms`) and **Privacy Policy** (`/privacy`) — Legal pages linked from footer.
+- **Product screenshots & video** — Real product screenshots throughout marketing site:
+  - Homepage hero: iPhone video of client portal experience
+  - How It Works: template builder, client portal, and activity feed screenshots
+  - Features page: dashboard hero screenshot and inline card screenshots
+  - Industry tabs: real project detail and documents screenshots
+  - Pro page: photo capture video, dashboard overview, project detail, activity feed
+  - All desktop screenshots wrapped in browser chrome frames
+- **Pricing FAQ section** — Answers to common questions below the pricing comparison table.
+- **Feature card badges** — "New" and "Popular" badges on feature cards for visual hierarchy.
+
+### Changed
+- **Homepage shortened** — Removed redundant "Why CollectRelay" section; tightened vertical spacing across all sections.
+- **Messaging unified** — All CTAs now say "Get started free" (not "Start trial" or "Get started"). Removed all 14-day trial references; aligned with free-tier-first model.
+- **Security wording** — Changed "end-to-end encryption" to "Encrypted in transit (TLS 1.3) and at rest". Changed "enterprise-grade" to "layered security controls".
+- **Footer expanded** — Added Terms, Privacy Policy, and Contact links.
+- **Nav updated** — "Get started free" CTA. Mobile hamburger menu now includes Log in and Get started free links.
+- **Closing CTA updated** — "Contact us" replaces "Book a demo". Trust signals strip added (no credit card, no client accounts, encrypted, audit trail).
+- **Social proof** — "Built for professionals" replaces "Trusted by professionals".
+- **Contractors page** — Improved subtitle copy; fixed "commission tracking" → "project cost tracking".
+- **Pro page** — Single phone video layout (was side-by-side). Added dashboard, project detail, and activity feed screenshots.
+
+### Fixed
+- **Mobile nav** — Login/register links were missing from hamburger menu (`.nav-actions` was `display: none` on mobile).
+- **Signature pad ink color** — Changed from grey to white for dark theme visibility.
+- **Upload API** — Fixed `file.stream()` crash on Cloudflare (switched to `arrayBuffer()`).
+- **Signature API** — Fixed unauthorized error in dev mode client portal.
+- **Photo note upload** — Fixed production crash from wrong column names.
+- **Workers AI vision** — Fixed model license acceptance and image format (base64 data URI).
+- **iOS input zoom** — Added `maximum-scale=1` viewport meta and `font-size: 16px` on inputs.
+- **AI summary display** — Strip JSON code fences from AI-generated summaries.
+
 ## [0.12.0] - 2026-03-16
 
 ### Added
