@@ -60,6 +60,20 @@
 					<p>One tap to relay AI-extracted insights to your project checklist, client portal, or daily log. Done.</p>
 				</div>
 			</div>
+			<div class="step-result">
+				<div class="browser-frame compact">
+					<div class="browser-titlebar">
+						<div class="browser-dots">
+							<span class="dot red"></span>
+							<span class="dot yellow"></span>
+							<span class="dot green"></span>
+						</div>
+						<div class="browser-address">collectrelay.com/app/projects</div>
+					</div>
+					<img src="/images/screenshots/project-detail.png" alt="Project checklist showing accepted, pending, and submitted document items" class="browser-screenshot" loading="lazy" />
+				</div>
+				<span class="result-caption">Every note, photo, and task lands in the right project automatically.</span>
+			</div>
 		</section>
 
 		<!-- Field-to-Dashboard -->
@@ -107,6 +121,23 @@
 						<p><strong>Document:</strong> PDF Site Observation Report with embedded photos, notes, and AI analysis per image</p>
 					</div>
 				</div>
+			</div>
+		</section>
+
+		<!-- Dashboard Preview -->
+		<section class="dashboard-preview">
+			<h2 class="section-title">Your Command Center</h2>
+			<p class="section-sub">Every project, every document, every deadline — one dashboard.</p>
+			<div class="browser-frame">
+				<div class="browser-titlebar">
+					<div class="browser-dots">
+						<span class="dot red"></span>
+						<span class="dot yellow"></span>
+						<span class="dot green"></span>
+					</div>
+					<div class="browser-address">collectrelay.com/app</div>
+				</div>
+				<img src="/images/screenshots/dashboard-overview.png" alt="CollectRelay dashboard showing active projects, pipeline value, and recent activity" class="browser-screenshot" loading="lazy" />
 			</div>
 		</section>
 
@@ -283,6 +314,28 @@
 					</div>
 					<h3>Zapier & API</h3>
 					<p>Connect CollectRelay to your CRM, accounting software, or project management tools with webhooks and a REST API.</p>
+				</div>
+			</div>
+		</section>
+
+		<!-- Activity Trail -->
+		<section class="activity-preview">
+			<div class="activity-layout">
+				<div class="activity-text">
+					<h2>Full Audit Trail.<br />Zero Guesswork.</h2>
+					<p>Every upload, review, reminder, and status change is recorded with timestamps. Know exactly who did what and when — across every project.</p>
+					<a href="/features" class="btn-outline-sm">See all features →</a>
+				</div>
+				<div class="browser-frame compact">
+					<div class="browser-titlebar">
+						<div class="browser-dots">
+							<span class="dot red"></span>
+							<span class="dot yellow"></span>
+							<span class="dot green"></span>
+						</div>
+						<div class="browser-address">collectrelay.com/app/activity</div>
+					</div>
+					<img src="/images/screenshots/activity-feed.png" alt="Activity feed showing file uploads, reviews, and status changes across projects" class="browser-screenshot" loading="lazy" />
 				</div>
 			</div>
 		</section>
@@ -612,6 +665,126 @@
 		line-height: 1.7;
 	}
 
+	/* Dashboard Preview */
+	.dashboard-preview {
+		margin-bottom: var(--space-5xl);
+	}
+
+	/* Browser Frame */
+	.browser-frame {
+		border-radius: var(--radius-lg);
+		overflow: hidden;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow:
+			0 20px 60px rgba(0, 0, 0, 0.4),
+			0 0 40px rgba(74, 122, 245, 0.06);
+		max-width: 960px;
+		margin: 0 auto;
+	}
+
+	.browser-frame.compact {
+		max-width: 800px;
+	}
+
+	.browser-titlebar {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: 10px 16px;
+		background: #1a1a2e;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	}
+
+	.browser-dots {
+		display: flex;
+		gap: 6px;
+	}
+
+	.browser-dots .dot {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+	}
+
+	.browser-dots .dot.red { background: #ff5f57; }
+	.browser-dots .dot.yellow { background: #ffbd2e; }
+	.browser-dots .dot.green { background: #28c840; }
+
+	.browser-address {
+		flex: 1;
+		text-align: center;
+		font-size: 11px;
+		color: var(--text-muted);
+		background: rgba(255, 255, 255, 0.04);
+		padding: 4px 12px;
+		border-radius: 4px;
+	}
+
+	.browser-screenshot {
+		width: 100%;
+		display: block;
+	}
+
+	/* Step Result */
+	.step-result {
+		margin-top: var(--space-3xl);
+		text-align: center;
+	}
+
+	.result-caption {
+		display: block;
+		margin-top: var(--space-lg);
+		font-size: var(--font-size-sm);
+		color: var(--text-muted);
+		font-weight: 500;
+	}
+
+	/* Activity Preview */
+	.activity-preview {
+		margin-bottom: var(--space-5xl);
+	}
+
+	.activity-layout {
+		display: flex;
+		align-items: center;
+		gap: var(--space-4xl);
+	}
+
+	.activity-text {
+		flex: 0 0 320px;
+	}
+
+	.activity-text h2 {
+		font-size: clamp(var(--font-size-xl), 3vw, var(--font-size-xxl));
+		font-weight: 700;
+		line-height: 1.2;
+		margin-bottom: var(--space-lg);
+	}
+
+	.activity-text p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		line-height: 1.7;
+		margin-bottom: var(--space-xl);
+	}
+
+	.btn-outline-sm {
+		display: inline-flex;
+		align-items: center;
+		padding: var(--space-sm) var(--space-lg);
+		border: 1px solid var(--border-color);
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		font-weight: 500;
+		border-radius: var(--radius-md);
+		transition: all var(--transition-fast);
+	}
+
+	.btn-outline-sm:hover {
+		background: var(--bg-secondary);
+		color: var(--text-primary);
+	}
+
 	/* CTA */
 	.cta-section {
 		text-align: center;
@@ -685,5 +858,7 @@
 		.cta-actions, .hero-actions { flex-direction: column; align-items: center; }
 		.summary-items { flex-direction: column; gap: var(--space-md); }
 		.summary-divider { display: none; }
+		.activity-layout { flex-direction: column; text-align: center; }
+		.activity-text { flex: none; }
 	}
 </style>
