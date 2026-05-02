@@ -32,9 +32,21 @@ export const GET: RequestHandler = async ({ params, platform, locals }) => {
 			throw error(403, 'Access denied');
 		}
 	} else if (locals.clientSession) {
-		// Client: verify the file belongs to their transaction
+		// Client: allow access to files in their current transaction OR
+		// to files in any transaction in the same workspace tied to the same client_email
+		// (Client Vault — cross-transaction archive for the same client).
 		if (file.transaction_id !== locals.clientSession.transactionId) {
-			throw error(403, 'Access denied');
+			const allowed = await db
+				.prepare(
+					`SELECT 1 FROM transactions f_t
+					 INNER JOIN transactions s_t ON s_t.id = ?
+					 WHERE f_t.id = ?
+					   AND f_t.workspace_id = s_t.workspace_id
+					   AND LOWER(f_t.client_email) = LOWER(?)`
+				)
+				.bind(locals.clientSession.transactionId, file.transaction_id, locals.clientSession.clientEmail)
+				.first();
+			if (!allowed) throw error(403, 'Access denied');
 		}
 	}
 

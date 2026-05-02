@@ -29,6 +29,7 @@ declare global {
 				FILES_BUCKET: R2Bucket;
 				SESSIONS: KVNamespace;
 				MAGIC_LINKS: KVNamespace;
+				OAUTH_STATES: KVNamespace;
 				EMAIL_API_KEY: string;
 				EMAIL_FROM: string;
 				APP_URL: string;
@@ -43,6 +44,8 @@ declare global {
 				ANTHROPIC_API_KEY: string;
 				VAPID_PUBLIC_KEY: string;
 				VAPID_PRIVATE_KEY: string;
+				BOX_CLIENT_ID?: string;
+				BOX_CLIENT_SECRET?: string;
 			};
 			context?: ExecutionContext;
 		}

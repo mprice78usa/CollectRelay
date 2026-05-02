@@ -7,6 +7,7 @@ import { recordItemActivity, markTransactionSeen, getItemActivityMap, getLastSee
 import type { TransactionWithItems, DbChecklistItem } from '$lib/server/db/transactions';
 import { getFilesForTransaction } from '$lib/server/db/files';
 import type { DbFile } from '$lib/server/db/files';
+import { listClientVaultFiles } from '$lib/server/db/vault';
 import { getCommentsForTransaction, addComment } from '$lib/server/db/comments';
 import type { DbComment } from '$lib/server/db/comments';
 import { sanitizeTextInput } from '$lib/server/sanitize';
@@ -27,17 +28,34 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	const transaction = await getTransactionByIdForClient(db, session.transactionId);
 	if (!transaction) return { transaction: null, files: [], comments: [], itemActivity: [], lastSeenAt: null };
 
-	const [files, comments, itemActivity, lastSeenAt] = await Promise.all([
+	const [files, comments, itemActivity, lastSeenAt, vaultFiles] = await Promise.all([
 		getFilesForTransaction(db, session.transactionId),
 		getCommentsForTransaction(db, session.transactionId),
 		getItemActivityMap(db, session.transactionId),
-		getLastSeen(db, session.transactionId, 'client', session.clientEmail)
+		getLastSeen(db, session.transactionId, 'client', session.clientEmail),
+		listClientVaultFiles(db, transaction.workspace_id, session.clientEmail, session.transactionId)
 	]);
 
 	// Mark as seen (non-blocking)
 	markTransactionSeen(db, session.transactionId, 'client', session.clientEmail).catch(() => {});
 
-	return { transaction, files, comments, itemActivity, lastSeenAt };
+	const clientVault = vaultFiles.map((f) => ({
+		id: f.id,
+		filename: f.filename,
+		fileSize: f.file_size,
+		mimeType: f.mime_type,
+		version: f.version,
+		createdAt: f.created_at,
+		uploadedByClient: f.uploaded_by_client === 1,
+		transaction: {
+			id: f.transaction_id,
+			title: f.transaction_title,
+			status: f.transaction_status
+		},
+		checklistItem: { name: f.checklist_item_name }
+	}));
+
+	return { transaction, files, comments, itemActivity, lastSeenAt, clientVault };
 };
 
 export const actions: Actions = {

@@ -1161,6 +1161,26 @@
 			</div>
 		</Card>
 	</section>
+
+	<!-- Integrations Section -->
+	<section class="settings-section">
+		<div class="section-header">
+			<div class="section-icon">
+				<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+					<path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+				</svg>
+			</div>
+			<div>
+				<h2>Integrations</h2>
+				<p class="section-desc">Connect cloud storage so you can push Vault files into Box, Dropbox, or Drive.</p>
+			</div>
+		</div>
+
+		<Card>
+			<a href="/app/settings/integrations" class="btn-primary" style="display: inline-block; text-decoration: none;">Manage integrations</a>
+		</Card>
+	</section>
 </div>
 
 <style>

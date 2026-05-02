@@ -593,6 +593,37 @@
 			{/each}
 		</div>
 
+		{#if data.clientVault && data.clientVault.length > 0}
+			<aside class="vault-section">
+				<header class="vault-section-header">
+					<h2>Your past documents</h2>
+					<p>Files from your other projects with this team.</p>
+				</header>
+				<ul class="vault-files">
+					{#each data.clientVault as vf (vf.id)}
+						<li class="vault-file">
+							<div class="vault-file-icon" aria-hidden="true">
+								{#if vf.mimeType?.startsWith('image/')}🖼️
+								{:else if vf.mimeType === 'application/pdf'}📄
+								{:else if vf.mimeType?.startsWith('audio/')}🎙️
+								{:else if vf.mimeType?.startsWith('video/')}🎬
+								{:else}📎{/if}
+							</div>
+							<div class="vault-file-meta">
+								<div class="vault-filename">{vf.filename}</div>
+								<div class="vault-file-sub">
+									{vf.transaction.title}
+									{#if vf.checklistItem.name} · {vf.checklistItem.name}{/if}
+									{#if vf.version > 1} · v{vf.version}{/if}
+								</div>
+							</div>
+							<a href="/api/files/{vf.id}" class="vault-download" download>Download</a>
+						</li>
+					{/each}
+				</ul>
+			</aside>
+		{/if}
+
 		<FilePreview file={previewFile} onclose={() => { previewFile = null; }} />
 		<ActivityToast transactionId={txn.id} />
 	</div>
@@ -1242,5 +1273,84 @@
 	.install-prompt svg {
 		color: var(--color-accent);
 		flex-shrink: 0;
+	}
+
+	.vault-section {
+		margin-top: var(--space-xxl);
+		padding: var(--space-xl);
+		background: var(--bg-secondary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-md);
+	}
+
+	.vault-section-header h2 {
+		font-size: var(--font-size-lg);
+		font-weight: 600;
+		margin: 0 0 4px 0;
+		color: var(--text-primary);
+	}
+
+	.vault-section-header p {
+		color: var(--text-secondary);
+		font-size: var(--font-size-sm);
+		margin: 0 0 var(--space-lg) 0;
+	}
+
+	.vault-files {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.vault-file {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-sm) var(--space-md);
+		background: var(--bg-primary);
+		border: 1px solid var(--border-color);
+		border-radius: var(--radius-sm);
+	}
+
+	.vault-file-icon {
+		font-size: 22px;
+		line-height: 1;
+		flex-shrink: 0;
+	}
+
+	.vault-file-meta {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.vault-filename {
+		color: var(--text-primary);
+		font-weight: 500;
+		font-size: var(--font-size-sm);
+		word-break: break-word;
+	}
+
+	.vault-file-sub {
+		color: var(--text-muted);
+		font-size: var(--font-size-xs);
+		margin-top: 2px;
+	}
+
+	.vault-download {
+		color: var(--color-accent);
+		font-size: var(--font-size-sm);
+		font-weight: 600;
+		white-space: nowrap;
+		padding: 6px 10px;
+		border-radius: var(--radius-sm);
+		flex-shrink: 0;
+	}
+
+	.vault-download:hover {
+		background: rgba(74, 122, 245, 0.1);
+		text-decoration: none;
 	}
 </style>

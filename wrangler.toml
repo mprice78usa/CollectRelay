@@ -23,6 +23,13 @@ id = "1bdad54acf4d40ce9069e5b36a301aaa"
 binding = "MAGIC_LINKS"
 id = "e319570c7c1643f991819053d6a607d4"
 
+# Short-lived OAuth state tokens for cloud storage integrations (Box, Dropbox, Drive).
+# 15-min TTL. For production, create with: npx wrangler kv namespace create OAUTH_STATES
+# then replace the placeholder id below.
+[[kv_namespaces]]
+binding = "OAUTH_STATES"
+id = "93124ce56ce04e469fb58c92641d0439"
+
 # Workers AI
 [ai]
 binding = "AI"
